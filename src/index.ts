@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type * as React from 'react';
 import type { LoaderFunction, ActionFunction } from 'react-router-dom';
 
@@ -18,7 +19,7 @@ interface RouteObjectWithId extends RouteObject {
 }
 
 type IdSegment<TRoute extends RouteObject> = TRoute extends {
-	path: infer TPath;
+	path: infer TPath extends string;
 }
 	? TPath
 	: TRoute extends { index: true }
@@ -77,10 +78,51 @@ type FlattenRoutes<
 	[K in keyof TRoutes]: FlattenRoute<TRoutes[K], TParentId>;
 }[number];
 
+//#endregion
+
+//#region Type utilities
+
 type ExtractRoutes<
 	TRoutes extends FlatRouteObject,
 	TId extends TRoutes['id']
 > = Extract<TRoutes, { id: TId }>;
+
+// TODO: add support for dynamic, optional and catchall segments
+type ToDescendant<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject,
+	TParentPath extends string,
+	TCumulativePath extends string = `${TParentPath}${TRoute extends {
+		path: infer TPath extends string;
+	}
+		? `${TParentPath extends '' ? '' : '/'}${TPath}`
+		: ''}`
+> = TCumulativePath | ToDescendants<TRoutes, TRoute, TCumulativePath>;
+
+type ToDescendants<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject,
+	TParentPath extends string = ''
+> = TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
+	? {
+			[TId in TChildIds]: ToDescendant<
+				TRoutes,
+				ExtractRoutes<TRoutes, TId>,
+				TParentPath
+			>;
+	  }[TChildIds]
+	: never;
+
+type Utils<
+	TRoutes extends FlatRouteObject,
+	TId extends TRoutes['id'],
+	TRoute extends FlatRouteObject = ExtractRoutes<TRoutes, TId>
+> = {
+	Link: (props: {
+		to: ToDescendants<TRoutes, TRoute>;
+		children?: React.ReactNode;
+	}) => React.ReactElement | null;
+};
 
 //#endregion
 
@@ -99,11 +141,10 @@ export function createRouteUtils<
 	type TRoutes = Extract<FlattenRoutes<TRoutesInput>, { id: string }>;
 
 	return {
-		createRoute: <TId extends TRoutes['id']>(id: TId) => {
-			type TRoute = ExtractRoutes<TRoutes, TId>;
-
-			return () => null;
-		},
+		createRoute: <TId extends TRoutes['id']>(
+			id: TId,
+			component: (utils: Utils<TRoutes, TId>) => () => any
+		) => component({ Link }),
 	};
 }
 
