@@ -1,6 +1,5 @@
 import type * as React from 'react';
 import type { LoaderFunction, ActionFunction } from 'react-router-dom';
-import type { Prettify } from './utils';
 
 interface RouteObject {
 	path?: string;
@@ -26,25 +25,23 @@ type IdSegment<TRoute extends RouteObject> = TRoute extends {
 	? 'index'
 	: '_';
 
-type RouteWithId<
+type AddIdToRoute<
 	TRoute extends RouteObject,
 	TParentId extends string = never,
 	TId extends string = `${[TParentId] extends [never]
 		? ''
 		: `${TParentId}/`}${IdSegment<TRoute>}`
-> = Prettify<
-	Omit<TRoute, 'children'> &
-		(TRoute extends { id: string } ? {} : { readonly id: TId }) &
-		(TRoute extends { children: infer TChildren extends readonly RouteObject[] }
-			? { readonly children: RoutesWithIds<TChildren, TId> }
-			: {})
->;
+> = Omit<TRoute, 'children'> &
+	(TRoute extends { id: string } ? {} : { readonly id: TId }) &
+	(TRoute extends { children: infer TChildren extends readonly RouteObject[] }
+		? { readonly children: AddIdsToRoutes<TChildren, TId> }
+		: {});
 
-type RoutesWithIds<
+type AddIdsToRoutes<
 	TRoutes extends readonly RouteObject[],
 	TParentId extends string = never
 > = {
-	[K in keyof TRoutes]: RouteWithId<TRoutes[K], TParentId>;
+	[K in keyof TRoutes]: AddIdToRoute<TRoutes[K], TParentId>;
 };
 
 //#endregion
@@ -56,7 +53,7 @@ interface FlatRouteObject extends RouteObjectWithId {
 	childIds?: string;
 }
 
-type FlatRoute<
+type FlattenRoute<
 	TRoute extends RouteObjectWithId,
 	TParentId extends string = never
 > =
@@ -70,14 +67,14 @@ type FlatRoute<
 	| (TRoute extends {
 			children: infer TChildren extends readonly RouteObjectWithId[];
 	  }
-			? FlatRoutes<TChildren, TRoute['id']>
+			? FlattenRoutes<TChildren, TRoute['id']>
 			: never);
 
-export type FlatRoutes<
+type FlattenRoutes<
 	TRoutes extends readonly RouteObjectWithId[],
 	TParentId extends string = never
 > = {
-	[K in keyof TRoutes]: FlatRoute<TRoutes[K], TParentId>;
+	[K in keyof TRoutes]: FlattenRoute<TRoutes[K], TParentId>;
 }[number];
 
 type ExtractRoutes<
@@ -93,13 +90,13 @@ type ExtractRoutes<
 export function createRoutes<TRoutes extends readonly RouteObject[]>(
 	routes: TRoutes
 ) {
-	return routes as RoutesWithIds<TRoutes>;
+	return routes as AddIdsToRoutes<TRoutes>;
 }
 
 export function createRouteUtils<
 	TRoutesInput extends readonly RouteObjectWithId[]
 >() {
-	type TRoutes = Extract<FlatRoutes<TRoutesInput>, { id: string }>;
+	type TRoutes = Extract<FlattenRoutes<TRoutesInput>, { id: string }>;
 
 	return {
 		createRoute: <TId extends TRoutes['id']>(id: TId) => {
