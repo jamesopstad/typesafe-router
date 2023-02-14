@@ -87,8 +87,12 @@ type ExtractRoutes<
 	TId extends TRoutes['id']
 > = Extract<TRoutes, { id: TId }>;
 
-// TODO: add support for dynamic, optional and catchall segments
-type ToDescendant<
+//#endregion
+
+//#region Link types
+
+// TODO: add support for optional segments
+type DescendantPath<
 	TRoutes extends FlatRouteObject,
 	TRoute extends FlatRouteObject,
 	TParentPath extends string,
@@ -97,31 +101,108 @@ type ToDescendant<
 	}
 		? `${TParentPath extends '' ? '' : '/'}${TPath}`
 		: ''}`
-> = TCumulativePath | ToDescendants<TRoutes, TRoute, TCumulativePath>;
+> = TCumulativePath | DescendantPaths<TRoutes, TRoute, TCumulativePath>;
 
-type ToDescendants<
+type DescendantPaths<
 	TRoutes extends FlatRouteObject,
 	TRoute extends FlatRouteObject,
 	TParentPath extends string = ''
 > = TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
 	? {
-			[TId in TChildIds]: ToDescendant<
+			[TChildId in TChildIds]: DescendantPath<
 				TRoutes,
-				ExtractRoutes<TRoutes, TId>,
+				ExtractRoutes<TRoutes, TChildId>,
 				TParentPath
 			>;
 	  }[TChildIds]
 	: never;
+
+type AncestorPaths<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject,
+	TPathPrefix extends string = '..',
+	TParentRoute extends FlatRouteObject = TRoute extends {
+		parentId: infer TParentId extends TRoutes['id'];
+	}
+		? ExtractRoutes<TRoutes, TParentId>
+		: never
+> = TParentRoute extends FlatRouteObject
+	? TParentRoute extends { path: string }
+		?
+				| TPathPrefix
+				| DescendantPaths<TRoutes, TParentRoute, TPathPrefix>
+				| AncestorPaths<TRoutes, TParentRoute, `../${TPathPrefix}`>
+		: AncestorPaths<TRoutes, TParentRoute, TPathPrefix>
+	: never;
+
+type AbsolutePath<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject,
+	TRootPath extends string = TRoute extends { path: infer TPath extends string }
+		? `/${TPath}`
+		: never
+> = [TRootPath] extends [never]
+	? TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
+		? AbsolutePaths<TRoutes, ExtractRoutes<TRoutes, TChildIds>>
+		: never
+	: TRootPath | DescendantPaths<TRoutes, TRoute, TRootPath>;
+
+type AbsolutePaths<
+	TRoutes extends FlatRouteObject,
+	TRootRoutes extends FlatRouteObject = Exclude<TRoutes, { parentId: string }>
+> = {
+	[TId in TRootRoutes['id']]: AbsolutePath<
+		TRoutes,
+		ExtractRoutes<TRoutes, TId>
+	>;
+}[TRootRoutes['id']];
+
+type _PathParams<TPath extends string> = TPath extends `${infer L}/${infer R}`
+	? _PathParams<L> | _PathParams<R>
+	: TPath extends `:${infer TParam}`
+	? TParam extends `${infer TOptionalParam}?`
+		? TOptionalParam
+		: TParam
+	: never;
+
+type PathParams<TPath extends string> = TPath extends '*'
+	? '*'
+	: TPath extends `${infer TRest}/*`
+	? '*' | _PathParams<TRest>
+	: _PathParams<TPath>;
+
+type LinkParams<
+	TPath extends string,
+	TPathParams extends string = PathParams<TPath>
+> = [TPathParams] extends [never]
+	? {}
+	: { params: Record<TPathParams, string> };
+
+type LinkComponent<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject
+> = <
+	TPath extends
+		| AbsolutePaths<TRoutes>
+		| AncestorPaths<TRoutes, TRoute>
+		| DescendantPaths<TRoutes, TRoute>
+>(
+	props: {
+		to: TPath;
+		children: React.ReactNode;
+	} & LinkParams<TPath>
+) => React.ReactElement | null;
+
+//#endregion
+
+//#region Route utils
 
 type Utils<
 	TRoutes extends FlatRouteObject,
 	TId extends TRoutes['id'],
 	TRoute extends FlatRouteObject = ExtractRoutes<TRoutes, TId>
 > = {
-	Link: (props: {
-		to: ToDescendants<TRoutes, TRoute>;
-		children?: React.ReactNode;
-	}) => React.ReactElement | null;
+	Link: LinkComponent<TRoutes, TRoute>;
 };
 
 //#endregion
@@ -144,7 +225,7 @@ export function createRouteUtils<
 		createRoute: <TId extends TRoutes['id']>(
 			id: TId,
 			component: (utils: Utils<TRoutes, TId>) => () => any
-		) => component({ Link }),
+		) => component({ Link } as any),
 	};
 }
 
