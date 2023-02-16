@@ -1,6 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link as _Link, generatePath } from 'react-router-dom';
 import type * as React from 'react';
 import type { LoaderFunction, ActionFunction } from 'react-router-dom';
+
+//#region input types
 
 interface RouteObject {
 	path?: string;
@@ -11,6 +13,8 @@ interface RouteObject {
 	children?: readonly RouteObject[];
 	element?: React.ReactNode | null;
 }
+
+//#endregion
 
 //#region Add default ids to routes
 
@@ -26,11 +30,13 @@ type IdSegment<TRoute extends RouteObject> = TRoute extends {
 	? 'index'
 	: '_';
 
-type AddIdToRoute<
+type _AddIdsToRoutes<
 	TRoute extends RouteObject,
-	TParentId extends string = never,
+	TParentId extends string,
 	TId extends string = `${[TParentId] extends [never]
 		? ''
+		: TParentId extends '/'
+		? '/'
 		: `${TParentId}/`}${IdSegment<TRoute>}`
 > = Omit<TRoute, 'children'> &
 	(TRoute extends { id: string } ? {} : { readonly id: TId }) &
@@ -42,7 +48,7 @@ type AddIdsToRoutes<
 	TRoutes extends readonly RouteObject[],
 	TParentId extends string = never
 > = {
-	[K in keyof TRoutes]: AddIdToRoute<TRoutes[K], TParentId>;
+	[K in keyof TRoutes]: _AddIdsToRoutes<TRoutes[K], TParentId>;
 };
 
 //#endregion
@@ -54,9 +60,9 @@ interface FlatRouteObject extends RouteObjectWithId {
 	childIds?: string;
 }
 
-type FlattenRoute<
+type _FlattenRoutes<
 	TRoute extends RouteObjectWithId,
-	TParentId extends string = never
+	TParentId extends string
 > =
 	| (Omit<TRoute, 'children'> &
 			([TParentId] extends [never] ? {} : { parentId: TParentId }) &
@@ -75,33 +81,31 @@ type FlattenRoutes<
 	TRoutes extends readonly RouteObjectWithId[],
 	TParentId extends string = never
 > = {
-	[K in keyof TRoutes]: FlattenRoute<TRoutes[K], TParentId>;
+	[K in keyof TRoutes]: _FlattenRoutes<TRoutes[K], TParentId>;
 }[number];
 
 //#endregion
 
-//#region Type utilities
+//#region Link types
 
 type ExtractRoutes<
 	TRoutes extends FlatRouteObject,
 	TId extends TRoutes['id']
 > = Extract<TRoutes, { id: TId }>;
 
-//#endregion
-
-//#region Link types
-
 // TODO: add support for optional segments
-type DescendantPath<
+type _DescendantPaths<
 	TRoutes extends FlatRouteObject,
 	TRoute extends FlatRouteObject,
 	TParentPath extends string,
 	TCumulativePath extends string = `${TParentPath}${TRoute extends {
 		path: infer TPath extends string;
 	}
-		? `${TParentPath extends '' ? '' : '/'}${TPath}`
+		? `${TParentPath extends '' | `${string}/` ? '' : '/'}${TPath}`
 		: ''}`
-> = TCumulativePath | DescendantPaths<TRoutes, TRoute, TCumulativePath>;
+> =
+	| (TCumulativePath extends '' ? never : TCumulativePath)
+	| DescendantPaths<TRoutes, TRoute, TCumulativePath>;
 
 type DescendantPaths<
 	TRoutes extends FlatRouteObject,
@@ -109,7 +113,7 @@ type DescendantPaths<
 	TParentPath extends string = ''
 > = TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
 	? {
-			[TChildId in TChildIds]: DescendantPath<
+			[TChildId in TChildIds]: _DescendantPaths<
 				TRoutes,
 				ExtractRoutes<TRoutes, TChildId>,
 				TParentPath
@@ -135,27 +139,27 @@ type AncestorPaths<
 		: AncestorPaths<TRoutes, TParentRoute, TPathPrefix>
 	: never;
 
-type AbsolutePath<
+type _AbsolutePaths<
 	TRoutes extends FlatRouteObject,
 	TRoute extends FlatRouteObject,
 	TRootPath extends string = TRoute extends { path: infer TPath extends string }
-		? `/${TPath}`
+		? TPath
 		: never
 > = [TRootPath] extends [never]
 	? TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
-		? AbsolutePaths<TRoutes, ExtractRoutes<TRoutes, TChildIds>>
+		? AbsolutePaths<TRoutes, TChildIds>
 		: never
 	: TRootPath | DescendantPaths<TRoutes, TRoute, TRootPath>;
 
 type AbsolutePaths<
 	TRoutes extends FlatRouteObject,
-	TRootRoutes extends FlatRouteObject = Exclude<TRoutes, { parentId: string }>
-> = {
-	[TId in TRootRoutes['id']]: AbsolutePath<
+	TRootRouteIds extends TRoutes['id'] = Exclude<
 		TRoutes,
-		ExtractRoutes<TRoutes, TId>
-	>;
-}[TRootRoutes['id']];
+		{ parentId: string }
+	>['id']
+> = {
+	[TId in TRootRouteIds]: _AbsolutePaths<TRoutes, ExtractRoutes<TRoutes, TId>>;
+}[TRootRouteIds];
 
 type _PathParams<TPath extends string> = TPath extends `${infer L}/${infer R}`
 	? _PathParams<L> | _PathParams<R>
@@ -189,7 +193,7 @@ type LinkComponent<
 >(
 	props: {
 		to: TPath;
-		children: React.ReactNode;
+		children?: React.ReactNode;
 	} & LinkParams<TPath>
 ) => React.ReactElement | null;
 
@@ -197,13 +201,13 @@ type LinkComponent<
 
 //#region Route utils
 
-type Utils<
+interface Utils<
 	TRoutes extends FlatRouteObject,
 	TId extends TRoutes['id'],
 	TRoute extends FlatRouteObject = ExtractRoutes<TRoutes, TId>
-> = {
+> {
 	Link: LinkComponent<TRoutes, TRoute>;
-};
+}
 
 //#endregion
 
@@ -216,16 +220,22 @@ export function createRoutes<TRoutes extends readonly RouteObject[]>(
 	return routes as AddIdsToRoutes<TRoutes>;
 }
 
+function Link({ to, params, ...rest }: any) {
+	return <_Link {...rest} to={generatePath(to, params)}></_Link>;
+}
+
 export function createRouteUtils<
-	TRoutesInput extends readonly RouteObjectWithId[]
+	TRoutes extends readonly RouteObjectWithId[]
 >() {
-	type TRoutes = Extract<FlattenRoutes<TRoutesInput>, { id: string }>;
+	type TFlatRoutes = Extract<FlattenRoutes<TRoutes>, { id: string }>;
 
 	return {
-		createRoute: <TId extends TRoutes['id']>(
+		createRouteComponent: <TId extends TFlatRoutes['id']>(
 			id: TId,
-			component: (utils: Utils<TRoutes, TId>) => () => any
-		) => component({ Link } as any),
+			component: (
+				utils: Utils<TFlatRoutes, TId>
+			) => (...args: any[]) => React.ReactElement | null
+		) => component({ Link }),
 	};
 }
 
