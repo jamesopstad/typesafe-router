@@ -67,14 +67,36 @@ type RemoveTrailingSlash<TPath extends string> = TPath extends `${infer TRest}/`
 	? TRest
 	: TPath;
 
+type AddLeadingSlash<TPath extends string> = TPath extends ''
+	? ''
+	: `/${TPath}`;
+
+type OptionalFinalSegment<TPath extends string> =
+	TPath extends `${infer L}/${infer R}`
+		? `${L}${AddLeadingSlash<OptionalFinalSegment<R>>}`
+		: '' | TPath;
+
+type _ConvertOptionalPathSegments<TPath extends string> =
+	TPath extends `${infer L}?${infer R}`
+		? `${OptionalFinalSegment<L>}${_ConvertOptionalPathSegments<R>}`
+		: TPath;
+
+// TODO: add support for '/optional?' path at root
+type ConvertOptionalPathSegments<TPath extends string> = RemoveLeadingSlash<
+	_ConvertOptionalPathSegments<TPath>
+>;
+
 type _FlattenRoutes<
 	TRoute extends RouteObjectWithId,
-	TParentId extends string
+	TParentId extends string,
+	TPath extends string = TRoute extends { path: infer TPath extends string }
+		? RemoveTrailingSlash<RemoveLeadingSlash<TPath>>
+		: never
 > =
 	| (Omit<TRoute, 'path' | 'children'> &
-			(TRoute extends { path: infer TPath extends string }
-				? { path: RemoveLeadingSlash<RemoveTrailingSlash<TPath>> }
-				: {}) &
+			([TPath] extends [never]
+				? {}
+				: { path: ConvertOptionalPathSegments<TPath> }) &
 			([TParentId] extends [never] ? {} : { parentId: TParentId }) &
 			(TRoute extends {
 				children: infer TChildren extends readonly RouteObjectWithId[];
