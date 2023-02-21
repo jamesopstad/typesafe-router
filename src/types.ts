@@ -1,5 +1,6 @@
 import type * as React from 'react';
 import type { LoaderFunction, ActionFunction } from 'react-router-dom';
+import type { Prettify } from './utils';
 
 //#region input types
 
@@ -54,7 +55,12 @@ export type AddIdsToRoutes<
 
 //#region Flatten routes into a union
 
+export type Param<TParam extends string = string> = Record<TParam, string>;
+
+type OptionalParam<TParam extends string> = Partial<Param<TParam>>;
+
 interface FlatRouteObject extends RouteObjectWithId {
+	params: Param;
 	parentId?: string;
 	childIds?: string;
 }
@@ -86,6 +92,20 @@ type ConvertOptionalPathSegments<TPath extends string> = RemoveLeadingSlash<
 	_ConvertOptionalPathSegments<TPath>
 >;
 
+type _GetParams<TPath extends string> = TPath extends `${infer L}/${infer R}`
+	? _GetParams<L> & _GetParams<R>
+	: TPath extends `:${infer TParam}`
+	? TParam extends `${infer TOptionalParam}?`
+		? OptionalParam<TOptionalParam>
+		: Param<TParam>
+	: {};
+
+type GetParams<TPath extends string> = TPath extends '*'
+	? Param<'*'>
+	: TPath extends `${infer TRest}/*`
+	? Param<'*'> & _GetParams<TRest>
+	: _GetParams<TPath>;
+
 type _FlattenRoutes<
 	TRoute extends RouteObjectWithId,
 	TParentId extends string,
@@ -95,8 +115,11 @@ type _FlattenRoutes<
 > =
 	| (Omit<TRoute, 'path' | 'children'> &
 			([TPath] extends [never]
-				? {}
-				: { path: ConvertOptionalPathSegments<TPath> }) &
+				? { params: {} }
+				: {
+						path: ConvertOptionalPathSegments<TPath>;
+						params: GetParams<TPath>;
+				  }) &
 			([TParentId] extends [never] ? {} : { parentId: TParentId }) &
 			(TRoute extends {
 				children: infer TChildren extends readonly RouteObjectWithId[];
@@ -231,6 +254,51 @@ type LinkComponent<
 
 //#endregion
 
+//#region useParam types
+
+type _AncestorParams<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject
+> = TRoute['params'] & AncestorParams<TRoutes, TRoute>;
+
+type AncestorParams<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject
+> = TRoute extends { parentId: infer TParentId extends TRoutes['id'] }
+	? _AncestorParams<TRoutes, ExtractRoutes<TRoutes, TParentId>>
+	: {};
+
+type _DescendantParams<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject,
+	TParams extends Param
+> =
+	| TParams
+	| (TParams & TRoute['params'] & DescendantParams<TRoutes, TRoute, TParams>);
+
+type DescendantParams<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject,
+	TParams extends Param
+> = TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
+	?
+			| {
+					[TChildId in TChildIds]: _DescendantParams<
+						TRoutes,
+						ExtractRoutes<TRoutes, TChildId>,
+						TParams
+					>;
+			  }[TChildIds]
+	: {};
+
+type UseParams<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject,
+	TParams extends Param = AncestorParams<TRoutes, TRoute> & TRoute['params']
+> = () => Prettify<TParams & DescendantParams<TRoutes, TRoute, TParams>>;
+
+//#endregion
+
 //#region Route utils
 
 export interface Utils<
@@ -239,6 +307,7 @@ export interface Utils<
 	TRoute extends FlatRouteObject = ExtractRoutes<TRoutes, TId>
 > {
 	Link: LinkComponent<TRoutes, TRoute>;
+	useParams: UseParams<TRoutes, TRoute>;
 }
 
 //#endregion

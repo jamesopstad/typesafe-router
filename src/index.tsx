@@ -1,9 +1,10 @@
-import { Link as _Link, generatePath } from 'react-router-dom';
+import { Link as _Link, generatePath, useParams } from 'react-router-dom';
 import type * as React from 'react';
 import type {
 	RouteObject,
 	RouteObjectWithId,
 	AddIdsToRoutes,
+	Param,
 	FlattenRoutes,
 	Utils,
 } from './types';
@@ -24,7 +25,10 @@ function Link({ to, params, ...rest }: any) {
 export function createRouteUtils<
 	TRoutes extends readonly RouteObjectWithId[]
 >() {
-	type TFlatRoutes = Extract<FlattenRoutes<TRoutes>, { id: string }>;
+	type TFlatRoutes = Extract<
+		FlattenRoutes<TRoutes>,
+		{ id: string; params: Param }
+	>;
 
 	return {
 		createRouteComponent: <TId extends TFlatRoutes['id']>(
@@ -32,7 +36,7 @@ export function createRouteUtils<
 			component: (
 				utils: Utils<TFlatRoutes, TId>
 			) => (...args: any[]) => React.ReactElement | null
-		) => component({ Link }),
+		) => component({ Link, useParams } as any),
 	};
 }
 
