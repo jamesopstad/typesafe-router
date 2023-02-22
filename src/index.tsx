@@ -2,8 +2,9 @@ import {
 	Link as _Link,
 	generatePath,
 	useParams,
-	useLoaderData,
 	useActionData,
+	useLoaderData,
+	useRouteLoaderData,
 } from 'react-router-dom';
 import type * as React from 'react';
 import type {
@@ -42,7 +43,14 @@ export function createRouteUtils<
 			component: (
 				utils: Utils<TFlatRoutes, TId>
 			) => (...args: any[]) => React.ReactElement | null
-		) => component({ Link, useParams, useLoaderData, useActionData } as any),
+		) =>
+			component({
+				Link,
+				useParams,
+				useActionData,
+				useLoaderData,
+				useRouteLoaderData,
+			} as any),
 	};
 }
 

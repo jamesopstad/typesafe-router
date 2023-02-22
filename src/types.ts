@@ -291,17 +291,17 @@ type DescendantParams<
 			  }[TChildIds]
 	: {};
 
-type UseParams<
+type Params<
 	TRoutes extends FlatRouteObject,
 	TRoute extends FlatRouteObject,
 	TParams extends Param = AncestorParams<TRoutes, TRoute> & TRoute['params']
-> = () => Prettify<TParams & DescendantParams<TRoutes, TRoute, TParams>>;
+> = Prettify<TParams & DescendantParams<TRoutes, TRoute, TParams>>;
 
 //#endregion
 
 //#region useActionData types
 
-type UseActionData<TRoute extends FlatRouteObject> = () => TRoute extends {
+type ActionData<TRoute extends FlatRouteObject> = TRoute extends {
 	action: infer TAction extends ActionFunction;
 }
 	? Awaited<ReturnType<TAction>>
@@ -311,11 +311,57 @@ type UseActionData<TRoute extends FlatRouteObject> = () => TRoute extends {
 
 //#region useLoaderData types
 
-type UseLoaderData<TRoute extends FlatRouteObject> = () => TRoute extends {
+type LoaderData<TRoute extends FlatRouteObject> = TRoute extends {
 	loader: infer TLoader extends LoaderFunction;
 }
 	? Awaited<ReturnType<TLoader>>
 	: never;
+
+//#endregion
+
+//#region useRouteLoaderData types
+
+type _AncestorRouteIds<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject
+> = TRoute['id'] | AncestorRouteIds<TRoutes, TRoute>;
+
+type AncestorRouteIds<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject
+> = TRoute extends { parentId: infer TParentId extends TRoutes['id'] }
+	? _AncestorRouteIds<TRoutes, ExtractRoutes<TRoutes, TParentId>>
+	: never;
+
+type _DescendantRouteIds<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject
+> = TRoute['id'] | DescendantRouteIds<TRoutes, TRoute>;
+
+type DescendantRouteIds<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject
+> = TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
+	? {
+			[TChildId in TChildIds]: _DescendantRouteIds<
+				TRoutes,
+				ExtractRoutes<TRoutes, TChildId>
+			>;
+	  }[TChildIds]
+	: never;
+
+type UseRouteLoaderData<
+	TRoutes extends FlatRouteObject,
+	TRoute extends FlatRouteObject,
+	TRequiredIds extends TRoutes['id'] =
+		| AncestorRouteIds<TRoutes, TRoute>
+		| TRoute['id'],
+	TOptionalIds extends TRoutes['id'] = DescendantRouteIds<TRoutes, TRoute>
+> = <TId extends TRequiredIds | TOptionalIds>(
+	id: TId
+) =>
+	| LoaderData<ExtractRoutes<TRoutes, TId>>
+	| (TId extends TOptionalIds ? undefined : never);
 
 //#endregion
 
@@ -327,9 +373,10 @@ export interface Utils<
 	TRoute extends FlatRouteObject = ExtractRoutes<TRoutes, TId>
 > {
 	Link: LinkComponent<TRoutes, TRoute>;
-	useParams: UseParams<TRoutes, TRoute>;
-	useActionData: UseActionData<TRoute>;
-	useLoaderData: UseLoaderData<TRoute>;
+	useParams: () => Params<TRoutes, TRoute>;
+	useActionData: () => ActionData<TRoute>;
+	useLoaderData: () => LoaderData<TRoute>;
+	useRouteLoaderData: UseRouteLoaderData<TRoutes, TRoute>;
 }
 
 //#endregion
