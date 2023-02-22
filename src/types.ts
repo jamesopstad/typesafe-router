@@ -305,7 +305,7 @@ type ActionData<TRoute extends FlatRouteObject> = TRoute extends {
 	action: infer TAction extends ActionFunction;
 }
 	? Awaited<ReturnType<TAction>> | undefined
-	: never;
+	: undefined;
 
 //#endregion
 
@@ -315,7 +315,7 @@ type LoaderData<TRoute extends FlatRouteObject> = TRoute extends {
 	loader: infer TLoader extends LoaderFunction;
 }
 	? Awaited<ReturnType<TLoader>>
-	: never;
+	: undefined;
 
 //#endregion
 
