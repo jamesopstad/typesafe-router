@@ -254,7 +254,7 @@ type LinkComponent<
 
 //#endregion
 
-//#region useParam types
+//#region useParams types
 
 type _AncestorParams<
 	TRoutes extends FlatRouteObject,
@@ -299,6 +299,26 @@ type UseParams<
 
 //#endregion
 
+//#region useActionData types
+
+type UseActionData<TRoute extends FlatRouteObject> = () => TRoute extends {
+	action: infer TAction extends ActionFunction;
+}
+	? Awaited<ReturnType<TAction>>
+	: never;
+
+//#endregion
+
+//#region useLoaderData types
+
+type UseLoaderData<TRoute extends FlatRouteObject> = () => TRoute extends {
+	loader: infer TLoader extends LoaderFunction;
+}
+	? Awaited<ReturnType<TLoader>>
+	: never;
+
+//#endregion
+
 //#region Route utils
 
 export interface Utils<
@@ -308,6 +328,8 @@ export interface Utils<
 > {
 	Link: LinkComponent<TRoutes, TRoute>;
 	useParams: UseParams<TRoutes, TRoute>;
+	useActionData: UseActionData<TRoute>;
+	useLoaderData: UseLoaderData<TRoute>;
 }
 
 //#endregion

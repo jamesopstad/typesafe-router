@@ -1,4 +1,10 @@
-import { Link as _Link, generatePath, useParams } from 'react-router-dom';
+import {
+	Link as _Link,
+	generatePath,
+	useParams,
+	useLoaderData,
+	useActionData,
+} from 'react-router-dom';
 import type * as React from 'react';
 import type {
 	RouteObject,
@@ -36,7 +42,7 @@ export function createRouteUtils<
 			component: (
 				utils: Utils<TFlatRoutes, TId>
 			) => (...args: any[]) => React.ReactElement | null
-		) => component({ Link, useParams } as any),
+		) => component({ Link, useParams, useLoaderData, useActionData } as any),
 	};
 }
 
