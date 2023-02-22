@@ -304,7 +304,7 @@ type Params<
 type ActionData<TRoute extends FlatRouteObject> = TRoute extends {
 	action: infer TAction extends ActionFunction;
 }
-	? Awaited<ReturnType<TAction>>
+	? Awaited<ReturnType<TAction>> | undefined
 	: never;
 
 //#endregion
@@ -321,10 +321,13 @@ type LoaderData<TRoute extends FlatRouteObject> = TRoute extends {
 
 //#region useRouteLoaderData types
 
+type LoaderRouteId<TRoute extends FlatRouteObject> =
+	TRoute['loader'] extends LoaderFunction ? TRoute['id'] : never;
+
 type _AncestorRouteIds<
 	TRoutes extends FlatRouteObject,
 	TRoute extends FlatRouteObject
-> = TRoute['id'] | AncestorRouteIds<TRoutes, TRoute>;
+> = LoaderRouteId<TRoute> | AncestorRouteIds<TRoutes, TRoute>;
 
 type AncestorRouteIds<
 	TRoutes extends FlatRouteObject,
@@ -336,7 +339,7 @@ type AncestorRouteIds<
 type _DescendantRouteIds<
 	TRoutes extends FlatRouteObject,
 	TRoute extends FlatRouteObject
-> = TRoute['id'] | DescendantRouteIds<TRoutes, TRoute>;
+> = LoaderRouteId<TRoute> | DescendantRouteIds<TRoutes, TRoute>;
 
 type DescendantRouteIds<
 	TRoutes extends FlatRouteObject,
@@ -355,7 +358,7 @@ type UseRouteLoaderData<
 	TRoute extends FlatRouteObject,
 	TRequiredIds extends TRoutes['id'] =
 		| AncestorRouteIds<TRoutes, TRoute>
-		| TRoute['id'],
+		| LoaderRouteId<TRoute>,
 	TOptionalIds extends TRoutes['id'] = DescendantRouteIds<TRoutes, TRoute>
 > = <TId extends TRequiredIds | TOptionalIds>(
 	id: TId
