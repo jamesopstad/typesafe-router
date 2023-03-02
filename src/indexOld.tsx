@@ -14,7 +14,7 @@ import type {
 	Param,
 	FlattenRoutes,
 	Utils,
-} from './types';
+} from './typesOld';
 
 //#region Function exports
 
