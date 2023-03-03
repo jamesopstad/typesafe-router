@@ -2,41 +2,29 @@ import type * as React from 'react';
 import type { LoaderFunction, ActionFunction } from 'react-router-dom';
 import type { Prettify } from './utils';
 
-interface BaseRouteObject {
+interface BaseRouteInput {
 	id?: string;
 }
 
-interface IndexRouteObject extends BaseRouteObject {
+interface IndexRouteInput extends BaseRouteInput {
+	path?: undefined;
 	index: true;
 	children?: undefined;
 }
 
-interface NonIndexRouteObject extends BaseRouteObject {
+interface NonIndexRouteInput extends BaseRouteInput {
 	path?: string;
 	index?: false;
-	children?: readonly RouteObject[];
+	children?: readonly RouteInput[];
 }
 
-export type RouteObject = IndexRouteObject | NonIndexRouteObject;
+export type RouteInput = IndexRouteInput | NonIndexRouteInput;
 
-interface NormalizedIndexRouteObject extends IndexRouteObject {
+export interface Route {
 	id: string;
-}
-
-interface NormalizedNonIndexRouteObject extends NonIndexRouteObject {
-	id: string;
-	children?: readonly NormalizedRouteObject[];
-}
-
-export type NormalizedRouteObject =
-	| NormalizedIndexRouteObject
-	| NormalizedNonIndexRouteObject;
-
-export interface AnyRouteObject {
 	path?: string;
-	id?: string;
 	index?: boolean;
-	children?: AnyRouteObject[];
+	children?: readonly Route[];
 }
 
 type RemoveLeadingSlashes<TPath extends string> =
@@ -45,12 +33,12 @@ type RemoveLeadingSlashes<TPath extends string> =
 type RemoveTrailingSlashes<TPath extends string> =
 	TPath extends `${infer TRest}/` ? RemoveTrailingSlashes<TRest> : TPath;
 
-export type NormalizePath<TRoute extends RouteObject> = Omit<TRoute, 'path'> &
+export type NormalizePath<TRoute extends RouteInput> = Omit<TRoute, 'path'> &
 	(TRoute extends { path: infer TPath extends string }
 		? { path: RemoveTrailingSlashes<RemoveLeadingSlashes<TPath>> }
 		: {});
 
-export type SetIdSegment<TRoute extends RouteObject> = TRoute extends {
+export type SetIdSegment<TRoute extends RouteInput> = TRoute extends {
 	path: infer TPath extends string;
 }
 	? TPath
@@ -59,8 +47,8 @@ export type SetIdSegment<TRoute extends RouteObject> = TRoute extends {
 	: '_';
 
 type SetId<
-	TRoute extends RouteObject,
-	TParentRoute extends RouteObject
+	TRoute extends RouteInput,
+	TParentRoute extends RouteInput
 > = TRoute &
 	(TRoute extends { readonly id: string }
 		? {}
@@ -74,14 +62,14 @@ type SetId<
 					: ''}/${SetIdSegment<TRoute>}`;
 		  });
 
-type _TransformRoutes<TRoute extends RouteObject> = Omit<TRoute, 'children'> &
-	(TRoute extends { children: infer TChildren extends readonly RouteObject[] }
+type _TransformRoutes<TRoute extends RouteInput> = Omit<TRoute, 'children'> &
+	(TRoute extends { children: infer TChildren extends readonly RouteInput[] }
 		? { readonly children: TransformRoutes<TChildren, TRoute> }
 		: {});
 
 export type TransformRoutes<
-	TRoutes extends readonly RouteObject[],
-	TParentRoute extends RouteObject = {}
+	TRoutes extends readonly RouteInput[],
+	TParentRoute extends RouteInput = {}
 > = {
 	[K in keyof TRoutes]: _TransformRoutes<
 		SetId<NormalizePath<TRoutes[K]>, TParentRoute>

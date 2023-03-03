@@ -1,6 +1,6 @@
-import type { AnyRouteObject } from './types';
+import type { RouteInput, Route, TransformRoutes } from './types';
 
-export function normalizePath(route: AnyRouteObject) {
+export function normalizePath(route: RouteInput) {
 	return typeof route.path === 'string'
 		? {
 				...route,
@@ -9,34 +9,41 @@ export function normalizePath(route: AnyRouteObject) {
 		: route;
 }
 
-export function setIdSegment({ path, index }: AnyRouteObject) {
+export function setIdSegment({ path, index }: RouteInput) {
 	return typeof path === 'string' ? path : index ? '_index' : '_';
 }
 
-export function setId(route: AnyRouteObject, parentRoute?: AnyRouteObject) {
-	return route.id
-		? route
-		: {
-				...route,
-				id: `${
-					parentRoute && parentRoute.id !== '/' ? parentRoute.id : ''
-				}/${setIdSegment(route)}`,
-		  };
+export function setId(route: RouteInput, parentRoute?: RouteInput) {
+	return {
+		...route,
+		id:
+			route.id ||
+			`${
+				parentRoute && parentRoute.id !== '/' ? parentRoute.id : ''
+			}/${setIdSegment(route)}`,
+	};
 }
 
 export function transformRoutes(
-	routes: AnyRouteObject[],
-	parentRoute?: AnyRouteObject
+	routes: readonly RouteInput[],
+	parentRoute?: RouteInput
 ) {
-	return routes.map((routeInput): AnyRouteObject => {
-		const route = [normalizePath, setId].reduce(
-			(acc, curr) => curr(acc, parentRoute),
-			routeInput
-		);
+	return routes.map((routeInput): Route => {
+		const route = setId(normalizePath(routeInput), parentRoute);
 
 		return {
 			...route,
 			children: route.children && transformRoutes(route.children, route),
 		};
 	});
+}
+
+export function createRoutes<TRoutes extends readonly RouteInput[]>(
+	routes: TRoutes
+) {
+	type Routes = TransformRoutes<TRoutes>;
+
+	return {
+		initialConfig: transformRoutes(routes) as Routes,
+	};
 }
