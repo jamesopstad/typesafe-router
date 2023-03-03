@@ -1,4 +1,9 @@
-import type { RouteInput, Route, TransformRoutes } from './types';
+import type {
+	RouteInput,
+	Route,
+	TransformRoutes,
+	FlattenRoutes,
+} from './types';
 
 export function normalizePath(route: RouteInput) {
 	return typeof route.path === 'string'
@@ -42,8 +47,10 @@ export function createRoutes<TRoutes extends readonly RouteInput[]>(
 	routes: TRoutes
 ) {
 	type Routes = TransformRoutes<TRoutes>;
+	type FlatRoutes = Extract<FlattenRoutes<Routes>, { id: string }>;
 
 	return {
+		getRouteId: (id: FlatRoutes['id']) => id,
 		initialConfig: transformRoutes(routes) as Routes,
 	};
 }

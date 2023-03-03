@@ -1,5 +1,11 @@
 import { describe, it, expectTypeOf } from 'vitest';
-import type { NormalizePath, SetIdSegment, TransformRoutes } from './types';
+import type {
+	NormalizePath,
+	SetIdSegment,
+	TransformRoutes,
+	SetParams,
+	ConvertOptionalPathSegments,
+} from './types';
 
 describe('NormalizePath', () => {
 	it('removes leading slashes', () => {
@@ -117,6 +123,151 @@ describe('TransformRoutes', () => {
 					path: '3/3-1';
 				}
 			]
+		>();
+	});
+});
+
+describe('SetParams', () => {
+	it('returns the correct type for paths with no params', () => {
+		expectTypeOf<SetParams<'one/two/three'>>().toEqualTypeOf<{}>();
+	});
+
+	it('returns the correct type for paths with catch-all segments', () => {
+		expectTypeOf<SetParams<'*'>>().toEqualTypeOf<{ '*': string }>();
+
+		expectTypeOf<SetParams<'path/*'>>().toEqualTypeOf<{ '*': string }>();
+
+		expectTypeOf<SetParams<':param/*'>>().toEqualTypeOf<{
+			param: string;
+			'*': string;
+		}>();
+
+		expectTypeOf<SetParams<':optional?/:dynamic/*'>>().toEqualTypeOf<{
+			dynamic: string;
+			optional?: string;
+			'*': string;
+		}>();
+	});
+
+	it('returns the correct type for paths with dynamic segments', () => {
+		expectTypeOf<SetParams<':one/two/three'>>().toEqualTypeOf<{
+			one: string;
+		}>();
+
+		expectTypeOf<SetParams<'one/:two/three'>>().toEqualTypeOf<{
+			two: string;
+		}>();
+
+		expectTypeOf<SetParams<'one/two/:three'>>().toEqualTypeOf<{
+			three: string;
+		}>();
+
+		expectTypeOf<SetParams<':one/:two/three'>>().toEqualTypeOf<{
+			one: string;
+			two: string;
+		}>();
+
+		expectTypeOf<SetParams<':one/two/:three'>>().toEqualTypeOf<{
+			one: string;
+			three: string;
+		}>();
+
+		expectTypeOf<SetParams<'one/:two/:three'>>().toEqualTypeOf<{
+			two: string;
+			three: string;
+		}>();
+	});
+
+	it('returns the correct type for paths with optional segments', () => {
+		expectTypeOf<SetParams<':one?/two/three'>>().toEqualTypeOf<{
+			one?: string;
+		}>();
+
+		expectTypeOf<SetParams<'one/:two?/three'>>().toEqualTypeOf<{
+			two?: string;
+		}>();
+
+		expectTypeOf<SetParams<'one/two/:three?'>>().toEqualTypeOf<{
+			three?: string;
+		}>();
+
+		expectTypeOf<SetParams<':one?/:two?/three'>>().toEqualTypeOf<{
+			one?: string;
+			two?: string;
+		}>();
+
+		expectTypeOf<SetParams<':one?/two/:three?'>>().toEqualTypeOf<{
+			one?: string;
+			three?: string;
+		}>();
+
+		expectTypeOf<SetParams<'one/:two?/:three?'>>().toEqualTypeOf<{
+			two?: string;
+			three?: string;
+		}>();
+	});
+
+	it('returns the correct type for paths with dynamic and optional segments', () => {
+		expectTypeOf<SetParams<':one/:two?/three'>>().toEqualTypeOf<{
+			one: string;
+			two?: string;
+		}>();
+
+		expectTypeOf<SetParams<':one?/two/:three'>>().toEqualTypeOf<{
+			one?: string;
+			three: string;
+		}>();
+
+		expectTypeOf<SetParams<'one/:two/:three?'>>().toEqualTypeOf<{
+			two: string;
+			three?: string;
+		}>();
+	});
+});
+
+describe('ConvertOptionalPathSegments', () => {
+	it('returns the original path if the path contains no optional segments', () => {
+		expectTypeOf<
+			ConvertOptionalPathSegments<'one/two/three'>
+		>().toEqualTypeOf<'one/two/three'>();
+	});
+
+	it('returns the correct union for paths with optional segments', () => {
+		expectTypeOf<ConvertOptionalPathSegments<'one?/two/three'>>().toEqualTypeOf<
+			'one/two/three' | 'two/three'
+		>();
+
+		expectTypeOf<ConvertOptionalPathSegments<'one/two?/three'>>().toEqualTypeOf<
+			'one/two/three' | 'one/three'
+		>();
+
+		expectTypeOf<ConvertOptionalPathSegments<'one/two/three?'>>().toEqualTypeOf<
+			'one/two/three' | 'one/two'
+		>();
+
+		expectTypeOf<
+			ConvertOptionalPathSegments<'one?/two?/three'>
+		>().toEqualTypeOf<'one/two/three' | 'one/three' | 'two/three' | 'three'>();
+
+		expectTypeOf<
+			ConvertOptionalPathSegments<'one?/two/three?'>
+		>().toEqualTypeOf<'one/two/three' | 'one/two' | 'two/three' | 'two'>();
+
+		expectTypeOf<
+			ConvertOptionalPathSegments<'one/two?/three?'>
+		>().toEqualTypeOf<'one/two/three' | 'one/two' | 'one/three' | 'one'>();
+
+		expectTypeOf<
+			ConvertOptionalPathSegments<'one?/two?/three?'>
+		>().toEqualTypeOf<
+			| 'one/two/three'
+			| 'one/two'
+			| 'one/three'
+			| 'two/three'
+			| 'one'
+			| 'two'
+			| 'three'
+			| ''
 		>();
 	});
 });
