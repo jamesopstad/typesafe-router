@@ -228,6 +228,22 @@ type Paths<TRoutes extends FlatRoute, TRoute extends FlatRoute> =
 	| AncestorPaths<TRoutes, TRoute>
 	| DescendantPaths<TRoutes, TRoute>;
 
+type _PathParams<TPath extends string> = TPath extends `${infer L}/${infer R}`
+	? _PathParams<L> | _PathParams<R>
+	: TPath extends `:${infer TParam}`
+	? TParam
+	: never;
+
+export type PathParams<TPath extends string> = TPath extends '*'
+	? '*'
+	: TPath extends `${infer TRest}/*`
+	? '*' | _PathParams<TRest>
+	: _PathParams<TPath>;
+
+//#endregion
+
+//#region Params
+
 //#endregion
 
 export interface LoaderUtils<

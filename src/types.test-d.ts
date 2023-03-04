@@ -10,6 +10,7 @@ import type {
 	DescendantPaths,
 	AncestorPaths,
 	AbsolutePaths,
+	PathParams,
 } from './types';
 
 type TestRoutes = [
@@ -140,16 +141,16 @@ describe('SetParams', () => {
 	it('returns the correct type for paths with catch-all segments', () => {
 		expectTypeOf<SetParams<'*'>>().toEqualTypeOf<{ '*': string }>();
 
-		expectTypeOf<SetParams<'path/*'>>().toEqualTypeOf<{ '*': string }>();
+		expectTypeOf<SetParams<'one/two/*'>>().toEqualTypeOf<{ '*': string }>();
 
-		expectTypeOf<SetParams<':param/*'>>().toEqualTypeOf<{
-			param: string;
+		expectTypeOf<SetParams<'one/:two/*'>>().toEqualTypeOf<{
+			two: string;
 			'*': string;
 		}>();
 
-		expectTypeOf<SetParams<':optional?/:dynamic/*'>>().toEqualTypeOf<{
-			dynamic: string;
-			optional?: string;
+		expectTypeOf<SetParams<':one?/:two/*'>>().toEqualTypeOf<{
+			one?: string;
+			two: string;
 			'*': string;
 		}>();
 	});
@@ -320,6 +321,40 @@ describe('Paths', () => {
 			| '/2/:2-1'
 			| '/3/3-1'
 			| '/3-1'
+		>();
+	});
+});
+
+describe('PathParams', () => {
+	it('returns never for paths with no params', () => {
+		expectTypeOf<PathParams<'one/two/three'>>().toEqualTypeOf<never>();
+	});
+
+	it('returns the correct type for paths with catch-all segments', () => {
+		expectTypeOf<PathParams<'*'>>().toEqualTypeOf<'*'>();
+
+		expectTypeOf<PathParams<'one/two/*'>>().toEqualTypeOf<'*'>();
+
+		expectTypeOf<PathParams<'one/:two/*'>>().toEqualTypeOf<'two' | '*'>();
+	});
+
+	it('returns the correct type for paths with dynamic segments', () => {
+		expectTypeOf<PathParams<':one/two/three'>>().toEqualTypeOf<'one'>();
+
+		expectTypeOf<PathParams<'one/:two/three'>>().toEqualTypeOf<'two'>();
+
+		expectTypeOf<PathParams<'one/two/:three'>>().toEqualTypeOf<'three'>();
+
+		expectTypeOf<PathParams<':one/:two/three'>>().toEqualTypeOf<
+			'one' | 'two'
+		>();
+
+		expectTypeOf<PathParams<':one/two/:three'>>().toEqualTypeOf<
+			'one' | 'three'
+		>();
+
+		expectTypeOf<PathParams<'one/:two/:three'>>().toEqualTypeOf<
+			'two' | 'three'
 		>();
 	});
 });
