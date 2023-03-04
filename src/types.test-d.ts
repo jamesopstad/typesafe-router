@@ -5,7 +5,47 @@ import type {
 	TransformRoutes,
 	SetParams,
 	ConvertOptionalPathSegments,
+	FlattenRoutes,
+	ExtractRoutes,
+	DescendantPaths,
+	AncestorPaths,
+	AbsolutePaths,
 } from './types';
+
+type TestRoutes = [
+	{
+		path: '/';
+		children: [
+			{
+				path: '1';
+				children: [
+					{
+						path: '1-1';
+						children: [
+							{
+								path: '1-1-1';
+							}
+						];
+					},
+					{
+						path: '1-2';
+					}
+				];
+			},
+			{
+				path: '2';
+				children: [
+					{
+						path: ':2-1';
+					}
+				];
+			}
+		];
+	},
+	{
+		path: '3?/3-1';
+	}
+];
 
 describe('NormalizePath', () => {
 	it('removes leading slashes', () => {
@@ -42,42 +82,7 @@ describe('SetIdSegment', () => {
 });
 
 describe('TransformRoutes', () => {
-	type TransformedRoutes = TransformRoutes<
-		[
-			{
-				path: '/';
-				children: [
-					{
-						path: '1';
-						children: [
-							{
-								path: '1-1';
-								children: [
-									{
-										path: '1-1-1';
-									}
-								];
-							},
-							{
-								path: '1-2';
-							}
-						];
-					},
-					{
-						path: '2';
-						children: [
-							{
-								path: '2-1';
-							}
-						];
-					}
-				];
-			},
-			{
-				path: '3/3-1';
-			}
-		]
-	>;
+	type TransformedRoutes = TransformRoutes<TestRoutes>;
 
 	it('correctly transforms paths and ids', () => {
 		expectTypeOf<TransformedRoutes>().toEqualTypeOf<
@@ -111,16 +116,16 @@ describe('TransformRoutes', () => {
 							path: '2';
 							children: [
 								{
-									id: '/2/2-1';
-									path: '2-1';
+									id: '/2/:2-1';
+									path: ':2-1';
 								}
 							];
 						}
 					];
 				},
 				{
-					id: '/3/3-1';
-					path: '3/3-1';
+					id: '/3?/3-1';
+					path: '3?/3-1';
 				}
 			]
 		>();
@@ -268,6 +273,53 @@ describe('ConvertOptionalPathSegments', () => {
 			| 'two'
 			| 'three'
 			| ''
+		>();
+	});
+});
+
+describe('Paths', () => {
+	type TransformedRoutes = TransformRoutes<TestRoutes>;
+	type Routes = FlattenRoutes<TransformedRoutes>;
+
+	it('returns the correct descendant paths', () => {
+		type Route = ExtractRoutes<Routes, '/'>;
+
+		expectTypeOf<DescendantPaths<Routes, Route>>().toEqualTypeOf<
+			'1' | '1/1-1' | '1/1-1/1-1-1' | '1/1-2' | '2' | '2/:2-1'
+		>();
+	});
+
+	it('returns the correct ancestor paths', () => {
+		type Route = ExtractRoutes<Routes, '/1/1-1/1-1-1'>;
+
+		expectTypeOf<AncestorPaths<Routes, Route>>().toEqualTypeOf<
+			| '..'
+			| '../1-1-1'
+			| '../..'
+			| '../../1-1'
+			| '../../1-1/1-1-1'
+			| '../../1-2'
+			| '../../..'
+			| '../../../1'
+			| '../../../1/1-1'
+			| '../../../1/1-1/1-1-1'
+			| '../../../1/1-2'
+			| '../../../2'
+			| '../../../2/:2-1'
+		>();
+	});
+
+	it('returns the correct absolute paths', () => {
+		expectTypeOf<AbsolutePaths<Routes>>().toEqualTypeOf<
+			| '/'
+			| '/1'
+			| '/1/1-1'
+			| '/1/1-1/1-1-1'
+			| '/1/1-2'
+			| '/2'
+			| '/2/:2-1'
+			| '/3/3-1'
+			| '/3-1'
 		>();
 	});
 });

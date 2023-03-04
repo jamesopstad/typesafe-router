@@ -3,6 +3,7 @@ import type {
 	Route,
 	TransformRoutes,
 	FlattenRoutes,
+	LoaderUtils,
 } from './types';
 
 export function normalizePath(route: RouteInput) {
@@ -47,9 +48,13 @@ export function createRoutes<TRoutes extends readonly RouteInput[]>(
 	routes: TRoutes
 ) {
 	type Routes = TransformRoutes<TRoutes>;
-	type FlatRoutes = Extract<FlattenRoutes<Routes>, { id: string }>;
+	type FlatRoutes = FlattenRoutes<Routes>;
 
 	return {
+		createLoader: <TId extends FlatRoutes['id']>(
+			id: TId,
+			loader: (utils: LoaderUtils<FlatRoutes, TId>) => any
+		) => {},
 		getRouteId: (id: FlatRoutes['id']) => id,
 		initialConfig: transformRoutes(routes) as Routes,
 	};
