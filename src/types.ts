@@ -84,12 +84,10 @@ export interface Route {
 
 type Param<TParam extends string> = Record<TParam, string>;
 
-export type OptionalParam<TParam extends string = string> = Partial<
-	Param<TParam>
->;
+type OptionalParam<TParam extends string = string> = Partial<Param<TParam>>;
 
 interface FlatRoute extends Route {
-	params: OptionalParam;
+	params: {};
 	parentId?: string;
 	childIds?: string;
 }
@@ -224,10 +222,19 @@ export type AbsolutePaths<
 	[TId in TRootRouteIds]: _AbsolutePaths<TRoutes, ExtractRoutes<TRoutes, TId>>;
 }[TRootRouteIds];
 
-type Paths<TRoutes extends FlatRoute, TRoute extends FlatRoute> =
+export type Paths<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute,
+	TRouteOrParent extends FlatRoute = TRoute extends {
+		index: true;
+		parentId: infer TParentId extends TRoutes['id'];
+	}
+		? ExtractRoutes<TRoutes, TParentId>
+		: TRoute
+> =
 	| AbsolutePaths<TRoutes>
-	| AncestorPaths<TRoutes, TRoute>
-	| DescendantPaths<TRoutes, TRoute>;
+	| AncestorPaths<TRoutes, TRouteOrParent>
+	| DescendantPaths<TRoutes, TRouteOrParent>;
 
 type _PathParams<TPath extends string> = TPath extends `${infer L}/${infer R}`
 	? _PathParams<L> | _PathParams<R>
@@ -293,5 +300,6 @@ export interface LoaderUtils<
 	TId extends string,
 	TRoute extends FlatRoute = ExtractRoutes<TRoutes, TId>
 > {
+	params: Params<TRoutes, TRoute>;
 	redirect: (id: Paths<TRoutes, TRoute>) => any;
 }

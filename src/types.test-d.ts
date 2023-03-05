@@ -1,4 +1,4 @@
-import { describe, it, expectTypeOf, expect } from 'vitest';
+import { describe, it, expectTypeOf } from 'vitest';
 import type {
 	NormalizePath,
 	SetIdSegment,
@@ -10,6 +10,7 @@ import type {
 	DescendantPaths,
 	AncestorPaths,
 	AbsolutePaths,
+	Paths,
 	PathParams,
 	AncestorParams,
 	DescendantParams,
@@ -24,10 +25,14 @@ type TestRoutes = [
 				path: ':1';
 				children: [
 					{
-						path: ':1-1';
 						children: [
 							{
-								path: ':1-1-1';
+								path: ':1-1';
+								children: [
+									{
+										path: ':1-1-1';
+									}
+								];
 							}
 						];
 					},
@@ -39,6 +44,9 @@ type TestRoutes = [
 			{
 				path: '2';
 				children: [
+					{
+						index: true;
+					},
 					{
 						path: ':2-1';
 					}
@@ -100,12 +108,17 @@ describe('TransformRoutes', () => {
 							path: ':1';
 							children: [
 								{
-									id: '/:1/:1-1';
-									path: ':1-1';
+									id: '/:1/_';
 									children: [
 										{
-											id: '/:1/:1-1/:1-1-1';
-											path: ':1-1-1';
+											id: '/:1/_/:1-1';
+											path: ':1-1';
+											children: [
+												{
+													id: '/:1/_/:1-1/:1-1-1';
+													path: ':1-1-1';
+												}
+											];
 										}
 									];
 								},
@@ -119,6 +132,10 @@ describe('TransformRoutes', () => {
 							id: '/2';
 							path: '2';
 							children: [
+								{
+									id: '/2/_index';
+									index: true;
+								},
 								{
 									id: '/2/:2-1';
 									path: ':2-1';
@@ -284,6 +301,7 @@ describe('ConvertOptionalPathSegments', () => {
 describe('Paths', () => {
 	type TransformedRoutes = TransformRoutes<TestRoutes>;
 	type Routes = FlattenRoutes<TransformedRoutes>;
+	type AbsolutePathsResult = AbsolutePaths<Routes>;
 
 	it('returns the correct descendant paths', () => {
 		type Route = ExtractRoutes<Routes, '/'>;
@@ -300,7 +318,7 @@ describe('Paths', () => {
 	});
 
 	it('returns the correct ancestor paths', () => {
-		type Route = ExtractRoutes<Routes, '/:1/:1-1/:1-1-1'>;
+		type Route = ExtractRoutes<Routes, '/:1/_/:1-1/:1-1-1'>;
 
 		expectTypeOf<AncestorPaths<Routes, Route>>().toEqualTypeOf<
 			| '..'
@@ -322,7 +340,7 @@ describe('Paths', () => {
 	});
 
 	it('returns the correct absolute paths', () => {
-		expectTypeOf<AbsolutePaths<Routes>>().toEqualTypeOf<
+		expectTypeOf<AbsolutePathsResult>().toEqualTypeOf<
 			| '/'
 			| '/:1'
 			| '/:1/:1-1'
@@ -333,6 +351,45 @@ describe('Paths', () => {
 			| '/2/:2-1'
 			| '/3/3-1'
 			| '/3-1'
+		>();
+	});
+
+	it('returns the correct combined paths', () => {
+		type Route = ExtractRoutes<Routes, '/:1/_/:1-1'>;
+
+		expectTypeOf<Paths<Routes, Route>>().toEqualTypeOf<
+			| AbsolutePathsResult
+			| ':1-1-1'
+			| '..'
+			| '../:1-1'
+			| '../:1-1/:1-1-1'
+			| '../1-2'
+			| '../1-2/:1-2-1'
+			| '../..'
+			| '../../:1'
+			| '../../:1/:1-1'
+			| '../../:1/:1-1/:1-1-1'
+			| '../../:1/1-2'
+			| '../../:1/1-2/:1-2-1'
+			| '../../2'
+			| '../../2/:2-1'
+		>();
+	});
+
+	it('returns the correct paths for index routes', () => {
+		type Route = ExtractRoutes<Routes, '/2/_index'>;
+
+		expectTypeOf<Paths<Routes, Route>>().toEqualTypeOf<
+			| AbsolutePathsResult
+			| ':2-1'
+			| '..'
+			| '../:1'
+			| '../:1/:1-1'
+			| '../:1/:1-1/:1-1-1'
+			| '../:1/1-2'
+			| '../:1/1-2/:1-2-1'
+			| '../2'
+			| '../2/:2-1'
 		>();
 	});
 });
@@ -376,13 +433,13 @@ describe('Params', () => {
 	type Routes = FlattenRoutes<TransformedRoutes>;
 
 	it('returns the correct current params', () => {
-		type Route = ExtractRoutes<Routes, '/:1/:1-1/:1-1-1'>;
+		type Route = ExtractRoutes<Routes, '/:1/_/:1-1/:1-1-1'>;
 
 		expectTypeOf<Route['params']>().toEqualTypeOf<{ '1-1-1': string }>();
 	});
 
 	it('returns the correct ancestor params', () => {
-		type Route = ExtractRoutes<Routes, '/:1/:1-1/:1-1-1'>;
+		type Route = ExtractRoutes<Routes, '/:1/_/:1-1/:1-1-1'>;
 
 		expectTypeOf<AncestorParams<Routes, Route>>().toEqualTypeOf<{
 			'1': string;
@@ -404,7 +461,7 @@ describe('Params', () => {
 	});
 
 	it('returns the correct combined params', () => {
-		type Route = ExtractRoutes<Routes, '/:1/:1-1'>;
+		type Route = ExtractRoutes<Routes, '/:1/_/:1-1'>;
 
 		expectTypeOf<Params<Routes, Route>>().toEqualTypeOf<
 			| { '1': string; '1-1': string }
