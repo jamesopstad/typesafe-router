@@ -3,6 +3,7 @@ import type {
 	Route,
 	TransformRoutes,
 	FlattenRoutes,
+	OptionalParam,
 	LoaderUtils,
 } from './types';
 
@@ -48,7 +49,10 @@ export function createRoutes<TRoutes extends readonly RouteInput[]>(
 	routes: TRoutes
 ) {
 	type Routes = TransformRoutes<TRoutes>;
-	type FlatRoutes = FlattenRoutes<Routes>;
+	type FlatRoutes = Extract<
+		FlattenRoutes<Routes>,
+		{ id: string; params: OptionalParam }
+	>;
 
 	return {
 		createLoader: <TId extends FlatRoutes['id']>(

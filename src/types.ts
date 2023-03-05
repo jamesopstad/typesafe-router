@@ -82,12 +82,14 @@ export interface Route {
 
 //#region Transform routes and flatten into a union
 
-type Param<TParam extends string = string> = Record<TParam, string>;
+type Param<TParam extends string> = Record<TParam, string>;
 
-type OptionalParam<TParam extends string> = Partial<Param<TParam>>;
+export type OptionalParam<TParam extends string = string> = Partial<
+	Param<TParam>
+>;
 
-export interface FlatRoute extends Route {
-	params: Param;
+interface FlatRoute extends Route {
+	params: OptionalParam;
 	parentId?: string;
 	childIds?: string;
 }
@@ -144,8 +146,7 @@ export type FlattenRoutes<
 	TParentId extends string = never
 > = {
 	[K in keyof TRoutes]: _FlattenRoutes<TRoutes[K], TParentId>;
-}[number] &
-	FlatRoute;
+}[number];
 
 export type ExtractRoutes<
 	TRoutes extends FlatRoute,
@@ -243,6 +244,47 @@ export type PathParams<TPath extends string> = TPath extends '*'
 //#endregion
 
 //#region Params
+
+type _AncestorParams<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute
+> = TRoute['params'] & AncestorParams<TRoutes, TRoute>;
+
+export type AncestorParams<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute
+> = TRoute extends { parentId: infer TParentId extends TRoutes['id'] }
+	? _AncestorParams<TRoutes, ExtractRoutes<TRoutes, TParentId>>
+	: {};
+
+type _DescendantParams<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute,
+	TParams extends OptionalParam
+> =
+	| TParams
+	| (TParams & TRoute['params'] & DescendantParams<TRoutes, TRoute, TParams>);
+
+export type DescendantParams<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute,
+	TParams extends OptionalParam
+> = TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
+	? {
+			[TChildId in TChildIds]: _DescendantParams<
+				TRoutes,
+				ExtractRoutes<TRoutes, TChildId>,
+				TParams
+			>;
+	  }[TChildIds]
+	: {};
+
+export type Params<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute,
+	TParams extends OptionalParam = AncestorParams<TRoutes, TRoute> &
+		TRoute['params']
+> = Prettify<TParams & DescendantParams<TRoutes, TRoute, TParams>>;
 
 //#endregion
 

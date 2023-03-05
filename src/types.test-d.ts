@@ -1,4 +1,4 @@
-import { describe, it, expectTypeOf } from 'vitest';
+import { describe, it, expectTypeOf, expect } from 'vitest';
 import type {
 	NormalizePath,
 	SetIdSegment,
@@ -11,6 +11,9 @@ import type {
 	AncestorPaths,
 	AbsolutePaths,
 	PathParams,
+	AncestorParams,
+	DescendantParams,
+	Params,
 } from './types';
 
 type TestRoutes = [
@@ -18,18 +21,18 @@ type TestRoutes = [
 		path: '/';
 		children: [
 			{
-				path: '1';
+				path: ':1';
 				children: [
 					{
-						path: '1-1';
+						path: ':1-1';
 						children: [
 							{
-								path: '1-1-1';
+								path: ':1-1-1';
 							}
 						];
 					},
 					{
-						path: '1-2';
+						path: '1-2/:1-2-1?';
 					}
 				];
 			},
@@ -93,22 +96,22 @@ describe('TransformRoutes', () => {
 					path: '';
 					children: [
 						{
-							id: '/1';
-							path: '1';
+							id: '/:1';
+							path: ':1';
 							children: [
 								{
-									id: '/1/1-1';
-									path: '1-1';
+									id: '/:1/:1-1';
+									path: ':1-1';
 									children: [
 										{
-											id: '/1/1-1/1-1-1';
-											path: '1-1-1';
+											id: '/:1/:1-1/:1-1-1';
+											path: ':1-1-1';
 										}
 									];
 								},
 								{
-									id: '/1/1-2';
-									path: '1-2';
+									id: '/:1/1-2/:1-2-1?';
+									path: '1-2/:1-2-1?';
 								}
 							];
 						},
@@ -286,25 +289,33 @@ describe('Paths', () => {
 		type Route = ExtractRoutes<Routes, '/'>;
 
 		expectTypeOf<DescendantPaths<Routes, Route>>().toEqualTypeOf<
-			'1' | '1/1-1' | '1/1-1/1-1-1' | '1/1-2' | '2' | '2/:2-1'
+			| ':1'
+			| ':1/:1-1'
+			| ':1/:1-1/:1-1-1'
+			| ':1/1-2/:1-2-1'
+			| ':1/1-2'
+			| '2'
+			| '2/:2-1'
 		>();
 	});
 
 	it('returns the correct ancestor paths', () => {
-		type Route = ExtractRoutes<Routes, '/1/1-1/1-1-1'>;
+		type Route = ExtractRoutes<Routes, '/:1/:1-1/:1-1-1'>;
 
 		expectTypeOf<AncestorPaths<Routes, Route>>().toEqualTypeOf<
 			| '..'
-			| '../1-1-1'
+			| '../:1-1-1'
 			| '../..'
-			| '../../1-1'
-			| '../../1-1/1-1-1'
+			| '../../:1-1'
+			| '../../:1-1/:1-1-1'
 			| '../../1-2'
+			| '../../1-2/:1-2-1'
 			| '../../..'
-			| '../../../1'
-			| '../../../1/1-1'
-			| '../../../1/1-1/1-1-1'
-			| '../../../1/1-2'
+			| '../../../:1'
+			| '../../../:1/:1-1'
+			| '../../../:1/:1-1/:1-1-1'
+			| '../../../:1/1-2'
+			| '../../../:1/1-2/:1-2-1'
 			| '../../../2'
 			| '../../../2/:2-1'
 		>();
@@ -313,10 +324,11 @@ describe('Paths', () => {
 	it('returns the correct absolute paths', () => {
 		expectTypeOf<AbsolutePaths<Routes>>().toEqualTypeOf<
 			| '/'
-			| '/1'
-			| '/1/1-1'
-			| '/1/1-1/1-1-1'
-			| '/1/1-2'
+			| '/:1'
+			| '/:1/:1-1'
+			| '/:1/:1-1/:1-1-1'
+			| '/:1/1-2'
+			| '/:1/1-2/:1-2-1'
 			| '/2'
 			| '/2/:2-1'
 			| '/3/3-1'
@@ -355,6 +367,48 @@ describe('PathParams', () => {
 
 		expectTypeOf<PathParams<'one/:two/:three'>>().toEqualTypeOf<
 			'two' | 'three'
+		>();
+	});
+});
+
+describe('Params', () => {
+	type TransformedRoutes = TransformRoutes<TestRoutes>;
+	type Routes = FlattenRoutes<TransformedRoutes>;
+
+	it('returns the correct current params', () => {
+		type Route = ExtractRoutes<Routes, '/:1/:1-1/:1-1-1'>;
+
+		expectTypeOf<Route['params']>().toEqualTypeOf<{ '1-1-1': string }>();
+	});
+
+	it('returns the correct ancestor params', () => {
+		type Route = ExtractRoutes<Routes, '/:1/:1-1/:1-1-1'>;
+
+		expectTypeOf<AncestorParams<Routes, Route>>().toEqualTypeOf<{
+			'1': string;
+			'1-1': string;
+		}>();
+	});
+
+	it('returns the correct descendant params', () => {
+		type Route = ExtractRoutes<Routes, '/'>;
+
+		expectTypeOf<DescendantParams<Routes, Route, {}>>().toEqualTypeOf<
+			| {}
+			| { '1': string }
+			| { '1': string; '1-1': string }
+			| { '1': string; '1-1': string; '1-1-1': string }
+			| { '1': string; '1-2-1'?: string }
+			| { '2-1': string }
+		>();
+	});
+
+	it('returns the correct combined params', () => {
+		type Route = ExtractRoutes<Routes, '/:1/:1-1'>;
+
+		expectTypeOf<Params<Routes, Route>>().toEqualTypeOf<
+			| { '1': string; '1-1': string }
+			| { '1': string; '1-1': string; '1-1-1': string }
 		>();
 	});
 });
