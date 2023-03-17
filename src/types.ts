@@ -1,6 +1,10 @@
-import type * as React from 'react';
-import type { LoaderFunction, ActionFunction } from 'react-router-dom';
+import * as symbols from './symbols';
 import type { Prettify } from './utils';
+import type {
+	RedirectFunction,
+	LoaderFunctionArgs,
+	ActionFunctionArgs,
+} from 'react-router-dom';
 
 //#region Transform input routes
 
@@ -86,7 +90,7 @@ type Param<TParam extends string> = Record<TParam, string>;
 
 type OptionalParam<TParam extends string = string> = Partial<Param<TParam>>;
 
-interface FlatRoute extends Route {
+export interface FlatRoute extends Route {
 	params: {};
 	parentId?: string;
 	childIds?: string;
@@ -295,11 +299,71 @@ export type Params<
 
 //#endregion
 
-export interface LoaderUtils<
-	TRoutes extends FlatRoute,
-	TId extends string,
-	TRoute extends FlatRoute = ExtractRoutes<TRoutes, TId>
-> {
-	params: Params<TRoutes, TRoute>;
-	redirect: (id: Paths<TRoutes, TRoute>) => any;
+//#region loader data
+
+//#endregion
+
+export interface Utils {
+	redirect?: RedirectFunction;
+	useParams?: () => Record<string, string | undefined>;
 }
+
+type ExtractUtils<T, U> = Pick<T, Extract<keyof T, keyof U>>;
+
+interface RedirectParameters<TUrl extends string>
+	extends Parameters<RedirectFunction> {
+	0: TUrl;
+}
+
+interface DataFunctionUtils<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute
+> {
+	redirect(
+		...args: RedirectParameters<Paths<TRoutes, TRoute>>
+	): ReturnType<RedirectFunction>;
+}
+
+export type LoaderWrapperArgs<
+	TRoutes extends FlatRoute = FlatRoute,
+	TUtils extends Utils = Utils,
+	TId extends string = string,
+	TRoute extends FlatRoute = ExtractRoutes<TRoutes, TId>
+> = Omit<LoaderFunctionArgs, 'params'> & {
+	params: Params<TRoutes, TRoute>;
+} & ExtractUtils<DataFunctionUtils<TRoutes, TRoute>, TUtils>;
+
+export type ActionWrapperArgs<
+	TRoutes extends FlatRoute = FlatRoute,
+	TUtils extends Utils = Utils,
+	TId extends string = string,
+	TRoute extends FlatRoute = ExtractRoutes<TRoutes, TId>
+> = Omit<ActionFunctionArgs, 'params'> & {
+	params: Params<TRoutes, TRoute>;
+} & ExtractUtils<DataFunctionUtils<TRoutes, TRoute>, TUtils>;
+
+interface RouteProp<TType extends symbol> {
+	type: TType;
+	id: string;
+	value: any;
+}
+
+export type Loader = RouteProp<typeof symbols.loader>;
+export type Action = RouteProp<typeof symbols.action>;
+
+export interface Config {
+	routes: FlatRoute;
+	utils: Utils;
+	loaders: Loader;
+	actions: Action;
+}
+
+interface ComponentUtils<TConfig extends Config, TRoute extends FlatRoute> {
+	useParams: () => Params<TConfig['routes'], TRoute>;
+}
+
+export type ComponentWrapperArgs<
+	TConfig extends Config = Config,
+	TId extends string = string,
+	TRoute extends FlatRoute = ExtractRoutes<TConfig['routes'], TId>
+> = ExtractUtils<ComponentUtils<TConfig, TRoute>, TConfig['utils']>;
