@@ -1,5 +1,11 @@
 import * as symbols from './symbols';
 import type { Prettify } from './utils';
+import {
+	useParams,
+	useLoaderData,
+	useActionData,
+	useRouteLoaderData,
+} from 'react-router-dom';
 import type {
 	RedirectFunction,
 	LoaderFunctionArgs,
@@ -150,10 +156,10 @@ export type FlattenRoutes<
 	[K in keyof TRoutes]: _FlattenRoutes<TRoutes[K], TParentId>;
 }[number];
 
-export type ExtractRoutes<
-	TRoutes extends FlatRoute,
-	TId extends TRoutes['id']
-> = Extract<TRoutes, { id: TId }>;
+export type ExtractById<
+	T extends { id: string },
+	TId extends T['id']
+> = Extract<T, { id: TId }>;
 
 //#endregion
 
@@ -180,7 +186,7 @@ export type DescendantPaths<
 	? {
 			[TChildId in TChildIds]: _DescendantPaths<
 				TRoutes,
-				ExtractRoutes<TRoutes, TChildId>,
+				ExtractById<TRoutes, TChildId>,
 				TParentPath
 			>;
 	  }[TChildIds]
@@ -193,7 +199,7 @@ export type AncestorPaths<
 	TParentRoute = TRoute extends {
 		parentId: infer TParentId extends TRoutes['id'];
 	}
-		? ExtractRoutes<TRoutes, TParentId>
+		? ExtractById<TRoutes, TParentId>
 		: never
 > = TParentRoute extends FlatRoute
 	? TParentRoute extends { path: string }
@@ -223,7 +229,7 @@ export type AbsolutePaths<
 		{ parentId: string }
 	>['id']
 > = {
-	[TId in TRootRouteIds]: _AbsolutePaths<TRoutes, ExtractRoutes<TRoutes, TId>>;
+	[TId in TRootRouteIds]: _AbsolutePaths<TRoutes, ExtractById<TRoutes, TId>>;
 }[TRootRouteIds];
 
 export type Paths<
@@ -233,7 +239,7 @@ export type Paths<
 		index: true;
 		parentId: infer TParentId extends TRoutes['id'];
 	}
-		? ExtractRoutes<TRoutes, TParentId>
+		? ExtractById<TRoutes, TParentId>
 		: TRoute
 > =
 	| AbsolutePaths<TRoutes>
@@ -265,7 +271,7 @@ export type AncestorParams<
 	TRoutes extends FlatRoute,
 	TRoute extends FlatRoute
 > = TRoute extends { parentId: infer TParentId extends TRoutes['id'] }
-	? _AncestorParams<TRoutes, ExtractRoutes<TRoutes, TParentId>>
+	? _AncestorParams<TRoutes, ExtractById<TRoutes, TParentId>>
 	: {};
 
 type _DescendantParams<
@@ -284,7 +290,7 @@ export type DescendantParams<
 	? {
 			[TChildId in TChildIds]: _DescendantParams<
 				TRoutes,
-				ExtractRoutes<TRoutes, TChildId>,
+				ExtractById<TRoutes, TChildId>,
 				TParams
 			>;
 	  }[TChildIds]
@@ -301,26 +307,93 @@ export type Params<
 
 //#region loader data
 
+// ADD SUPPORT FOR DEFER
+type LoaderData<TLoader extends Loader> = Awaited<ReturnType<TLoader['value']>>;
+
+type _AncestorIds<TRoutes extends FlatRoute, TRoute extends FlatRoute> =
+	| TRoute['id']
+	| AncestorIds<TRoutes, TRoute>;
+
+type AncestorIds<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute
+> = TRoute extends { parentId: infer TParentId extends TRoutes['id'] }
+	? _AncestorIds<TRoutes, ExtractById<TRoutes, TParentId>>
+	: never;
+
+type _DescendantIds<TRoutes extends FlatRoute, TRoute extends FlatRoute> =
+	| TRoute['id']
+	| DescendantIds<TRoutes, TRoute>;
+
+type DescendantIds<
+	TRoutes extends FlatRoute,
+	TRoute extends FlatRoute
+> = TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
+	? {
+			[TChildId in TChildIds]: _DescendantIds<
+				TRoutes,
+				ExtractById<TRoutes, TChildId>
+			>;
+	  }[TChildIds]
+	: never;
+
+type UseRouteLoaderData<
+	TConfig extends Config,
+	TRoute extends FlatRoute,
+	TRequiredIds extends TConfig['routes']['id'] =
+		| AncestorIds<TConfig['routes'], TRoute>
+		| TRoute['id'],
+	TOptionalIds extends TConfig['routes']['id'] = DescendantIds<
+		TConfig['routes'],
+		TRoute
+	>
+> = <
+	TId extends Extract<TConfig['loaders']['id'], TRequiredIds | TOptionalIds>
+>(
+	id: TId
+) =>
+	| LoaderData<ExtractById<TConfig['loaders'], TId>>
+	| (TId extends TOptionalIds ? undefined : never);
+
 //#endregion
 
+//#region action data
+
+type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
+
+//#endregion
+
+// ADD TYPES
 export interface Utils {
 	redirect?: RedirectFunction;
-	useParams?: () => Record<string, string | undefined>;
+	useParams?: typeof useParams;
+	useLoaderData?: typeof useLoaderData;
+	useActionData?: typeof useActionData;
+	useRouteLoaderData?: typeof useRouteLoaderData;
 }
 
 type ExtractUtils<T, U> = Pick<T, Extract<keyof T, keyof U>>;
 
-interface RedirectParameters<TUrl extends string>
-	extends Parameters<RedirectFunction> {
-	0: TUrl;
-}
+type RedirectParams<
+	TPath extends string,
+	TPathParams extends string = PathParams<TPath>,
+	TBaseOptions = {
+		init?: Parameters<RedirectFunction>[1];
+		searchParams?: Record<string, string>;
+	}
+> = [TPathParams] extends [never]
+	? [to: TPath, options?: TBaseOptions]
+	: [
+			to: TPath,
+			options: TBaseOptions & { params: Record<TPathParams, string> }
+	  ];
 
 interface DataFunctionUtils<
 	TRoutes extends FlatRoute,
 	TRoute extends FlatRoute
 > {
-	redirect(
-		...args: RedirectParameters<Paths<TRoutes, TRoute>>
+	redirect<TPath extends Paths<TRoutes, TRoute>>(
+		...args: RedirectParams<TPath>
 	): ReturnType<RedirectFunction>;
 }
 
@@ -328,7 +401,7 @@ export type LoaderWrapperArgs<
 	TRoutes extends FlatRoute = FlatRoute,
 	TUtils extends Utils = Utils,
 	TId extends string = string,
-	TRoute extends FlatRoute = ExtractRoutes<TRoutes, TId>
+	TRoute extends FlatRoute = ExtractById<TRoutes, TId>
 > = Omit<LoaderFunctionArgs, 'params'> & {
 	params: Params<TRoutes, TRoute>;
 } & ExtractUtils<DataFunctionUtils<TRoutes, TRoute>, TUtils>;
@@ -337,12 +410,12 @@ export type ActionWrapperArgs<
 	TRoutes extends FlatRoute = FlatRoute,
 	TUtils extends Utils = Utils,
 	TId extends string = string,
-	TRoute extends FlatRoute = ExtractRoutes<TRoutes, TId>
+	TRoute extends FlatRoute = ExtractById<TRoutes, TId>
 > = Omit<ActionFunctionArgs, 'params'> & {
 	params: Params<TRoutes, TRoute>;
 } & ExtractUtils<DataFunctionUtils<TRoutes, TRoute>, TUtils>;
 
-interface RouteProp<TType extends symbol> {
+export interface RouteProp<TType extends symbol> {
 	type: TType;
 	id: string;
 	value: any;
@@ -350,6 +423,7 @@ interface RouteProp<TType extends symbol> {
 
 export type Loader = RouteProp<typeof symbols.loader>;
 export type Action = RouteProp<typeof symbols.action>;
+export type Component = RouteProp<typeof symbols.component>;
 
 export interface Config {
 	routes: FlatRoute;
@@ -360,10 +434,17 @@ export interface Config {
 
 interface ComponentUtils<TConfig extends Config, TRoute extends FlatRoute> {
 	useParams: () => Params<TConfig['routes'], TRoute>;
+	useLoaderData: () => LoaderData<
+		ExtractById<TConfig['loaders'], TRoute['id']>
+	>;
+	useActionData: () => ActionData<
+		ExtractById<TConfig['actions'], TRoute['id']>
+	>;
+	useRouteLoaderData: UseRouteLoaderData<TConfig, TRoute>;
 }
 
 export type ComponentWrapperArgs<
 	TConfig extends Config = Config,
 	TId extends string = string,
-	TRoute extends FlatRoute = ExtractRoutes<TConfig['routes'], TId>
+	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
 > = ExtractUtils<ComponentUtils<TConfig, TRoute>, TConfig['utils']>;

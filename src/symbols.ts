@@ -1,3 +1,3 @@
-export const loader = Symbol();
-export const action = Symbol();
-export const component = Symbol();
+export const loader = Symbol('loader');
+export const action = Symbol('action');
+export const component = Symbol('component');
