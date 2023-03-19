@@ -1,16 +1,26 @@
 import * as symbols from './symbols';
-import type { Prettify } from './utils';
-import {
-	useParams,
-	useLoaderData,
-	useActionData,
-	useRouteLoaderData,
-} from 'react-router-dom';
+import type { Utils } from './utils';
 import type {
 	RedirectFunction,
 	LoaderFunctionArgs,
 	ActionFunctionArgs,
+	URLSearchParamsInit,
 } from 'react-router-dom';
+
+//#region Utils
+
+type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
+
+export type ExtractById<
+	T extends { id: string },
+	TId extends T['id']
+> = Extract<T, { id: TId }>;
+
+type ExtractUtils<T, U> = Pick<T, Extract<keyof T, keyof U>>;
+
+//#endregion
 
 //#region Transform input routes
 
@@ -156,11 +166,6 @@ export type FlattenRoutes<
 	[K in keyof TRoutes]: _FlattenRoutes<TRoutes[K], TParentId>;
 }[number];
 
-export type ExtractById<
-	T extends { id: string },
-	TId extends T['id']
-> = Extract<T, { id: TId }>;
-
 //#endregion
 
 //#region Paths
@@ -305,10 +310,7 @@ export type Params<
 
 //#endregion
 
-//#region loader data
-
-// ADD SUPPORT FOR DEFER
-type LoaderData<TLoader extends Loader> = Awaited<ReturnType<TLoader['value']>>;
+//#region IDs
 
 type _AncestorIds<TRoutes extends FlatRoute, TRoute extends FlatRoute> =
 	| TRoute['id']
@@ -337,6 +339,102 @@ type DescendantIds<
 	  }[TChildIds]
 	: never;
 
+//#endregion
+
+//#region Links
+
+export type ParamsObject<TParams extends string = string> = Record<
+	TParams,
+	string
+>;
+
+type LinkOptions<TBaseOptions> = Omit<TBaseOptions, 'to' | 'relative'> & {
+	searchParams?: URLSearchParamsInit;
+};
+
+type LinkProps<
+	TPath extends string,
+	TBaseOptions,
+	TPathParams extends string = PathParams<TPath>,
+	TOptions = LinkOptions<TBaseOptions>
+> = { to: TPath } & TOptions &
+	([TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> });
+
+type LinkParams<
+	TPath extends string,
+	TBaseOptions,
+	TPathParams extends string = PathParams<TPath>,
+	TOptions = LinkOptions<TBaseOptions>
+> = [TPathParams] extends [never]
+	? [to: TPath, options?: TOptions]
+	: [to: TPath, options: TOptions & { params: ParamsObject<TPathParams> }];
+
+//#endregion
+
+//#region Config
+
+export interface RouteProp<TType extends symbol> {
+	type: TType;
+	id: string;
+	value: any;
+}
+
+export type Loader = RouteProp<typeof symbols.loader>;
+export type Action = RouteProp<typeof symbols.action>;
+export type Component = RouteProp<typeof symbols.component>;
+
+export interface Config {
+	routes: FlatRoute;
+	utils: Partial<Utils>;
+	loaders: Loader;
+	actions: Action;
+}
+
+//#endregion
+
+//#region Data functions
+
+type Redirect<TPaths extends string = string> = <TPath extends TPaths>(
+	...args: LinkParams<TPath, { init?: Parameters<Utils['redirect']>[1] }>
+) => ReturnType<RedirectFunction>;
+
+interface DataFunctionUtils<
+	TConfig extends Config,
+	TRoute extends FlatRoute,
+	TPaths extends string = Paths<TConfig['routes'], TRoute>
+> {
+	redirect: Redirect<TPaths>;
+}
+
+export type LoaderWrapperArgs<
+	TConfig extends Config,
+	TId extends string = string,
+	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
+> = Omit<LoaderFunctionArgs, 'params'> & {
+	params: Params<TConfig['routes'], TRoute>;
+} & ExtractUtils<DataFunctionUtils<TConfig, TRoute>, TConfig['utils']>;
+
+export type ActionWrapperArgs<
+	TConfig extends Config,
+	TId extends string = string,
+	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
+> = Omit<ActionFunctionArgs, 'params'> & {
+	params: Params<TConfig['routes'], TRoute>;
+} & ExtractUtils<DataFunctionUtils<TConfig, TRoute>, TConfig['utils']>;
+
+//#endregion
+
+//#region Components
+
+type Link<TPaths extends string> = <TPath extends TPaths>(
+	props: LinkProps<TPath, Parameters<Utils['Link']>[0]>
+) => ReturnType<Utils['Link']>;
+
+type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
+
+// ADD SUPPORT FOR DEFER
+type LoaderData<TLoader extends Loader> = Awaited<ReturnType<TLoader['value']>>;
+
 type UseRouteLoaderData<
 	TConfig extends Config,
 	TRoute extends FlatRoute,
@@ -355,90 +453,18 @@ type UseRouteLoaderData<
 	| LoaderData<ExtractById<TConfig['loaders'], TId>>
 	| (TId extends TOptionalIds ? undefined : never);
 
-//#endregion
-
-//#region action data
-
-type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
-
-//#endregion
-
-// ADD TYPES
-export interface Utils {
-	redirect?: RedirectFunction;
-	useParams?: typeof useParams;
-	useLoaderData?: typeof useLoaderData;
-	useActionData?: typeof useActionData;
-	useRouteLoaderData?: typeof useRouteLoaderData;
-}
-
-type ExtractUtils<T, U> = Pick<T, Extract<keyof T, keyof U>>;
-
-type RedirectParams<
-	TPath extends string,
-	TPathParams extends string = PathParams<TPath>,
-	TBaseOptions = {
-		init?: Parameters<RedirectFunction>[1];
-		searchParams?: Record<string, string>;
-	}
-> = [TPathParams] extends [never]
-	? [to: TPath, options?: TBaseOptions]
-	: [
-			to: TPath,
-			options: TBaseOptions & { params: Record<TPathParams, string> }
-	  ];
-
-interface DataFunctionUtils<
-	TRoutes extends FlatRoute,
-	TRoute extends FlatRoute
+interface ComponentUtils<
+	TConfig extends Config,
+	TRoute extends FlatRoute,
+	TPaths extends string = Paths<TConfig['routes'], TRoute>
 > {
-	redirect<TPath extends Paths<TRoutes, TRoute>>(
-		...args: RedirectParams<TPath>
-	): ReturnType<RedirectFunction>;
-}
-
-export type LoaderWrapperArgs<
-	TRoutes extends FlatRoute = FlatRoute,
-	TUtils extends Utils = Utils,
-	TId extends string = string,
-	TRoute extends FlatRoute = ExtractById<TRoutes, TId>
-> = Omit<LoaderFunctionArgs, 'params'> & {
-	params: Params<TRoutes, TRoute>;
-} & ExtractUtils<DataFunctionUtils<TRoutes, TRoute>, TUtils>;
-
-export type ActionWrapperArgs<
-	TRoutes extends FlatRoute = FlatRoute,
-	TUtils extends Utils = Utils,
-	TId extends string = string,
-	TRoute extends FlatRoute = ExtractById<TRoutes, TId>
-> = Omit<ActionFunctionArgs, 'params'> & {
-	params: Params<TRoutes, TRoute>;
-} & ExtractUtils<DataFunctionUtils<TRoutes, TRoute>, TUtils>;
-
-export interface RouteProp<TType extends symbol> {
-	type: TType;
-	id: string;
-	value: any;
-}
-
-export type Loader = RouteProp<typeof symbols.loader>;
-export type Action = RouteProp<typeof symbols.action>;
-export type Component = RouteProp<typeof symbols.component>;
-
-export interface Config {
-	routes: FlatRoute;
-	utils: Utils;
-	loaders: Loader;
-	actions: Action;
-}
-
-interface ComponentUtils<TConfig extends Config, TRoute extends FlatRoute> {
+	Link: Link<TPaths>;
 	useParams: () => Params<TConfig['routes'], TRoute>;
-	useLoaderData: () => LoaderData<
-		ExtractById<TConfig['loaders'], TRoute['id']>
-	>;
 	useActionData: () => ActionData<
 		ExtractById<TConfig['actions'], TRoute['id']>
+	>;
+	useLoaderData: () => LoaderData<
+		ExtractById<TConfig['loaders'], TRoute['id']>
 	>;
 	useRouteLoaderData: UseRouteLoaderData<TConfig, TRoute>;
 }
@@ -448,3 +474,5 @@ export type ComponentWrapperArgs<
 	TId extends string = string,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
 > = ExtractUtils<ComponentUtils<TConfig, TRoute>, TConfig['utils']>;
+
+//#endregion

@@ -4,7 +4,6 @@ import type {
 	TransformRoutes,
 	Route,
 	FlattenRoutes,
-	Utils,
 	LoaderWrapperArgs,
 	ActionWrapperArgs,
 	ComponentWrapperArgs,
@@ -14,13 +13,12 @@ import type {
 	Component,
 	Config,
 } from './types';
-import { generatePath, createSearchParams } from 'react-router-dom';
+import { enhanceUtils } from './utils';
 import type {
 	ActionFunction,
 	ActionFunctionArgs,
 	LoaderFunction,
 	LoaderFunctionArgs,
-	RedirectFunction,
 } from 'react-router-dom';
 
 export function normalizePath(route: RouteInput) {
@@ -102,18 +100,20 @@ function toObject<TInput extends RouteProp<TSymbol>[], TSymbol extends symbol>(
 	};
 }
 
-function configFn(config: {
-	routes: Route[];
-	utils: {};
-	loaders: Record<string, any>;
-	actions: Record<string, any>;
-	components: Record<string, any>;
-}) {
+function configFn(
+	routes: Route[],
+	config: {
+		utils: {};
+		loaders: Record<string, any>;
+		actions: Record<string, any>;
+		components: Record<string, any>;
+	}
+) {
 	return {
 		addComponents<TComponents extends Component[]>(...components: TComponents) {
 			const componentsObject = toObject(components, symbols.component);
 
-			return finalize(config.routes, {
+			return finalize(routes, {
 				...config,
 				components: componentsObject,
 			});
@@ -121,14 +121,16 @@ function configFn(config: {
 	};
 }
 
-function initialConfigFn<TConfig extends Config>(config: {
-	routes: Route[];
-	utils: {};
-	loaders: {};
-	actions: {};
-}) {
+function initialConfigFn<TConfig extends Config>(
+	routes: Route[],
+	config: {
+		utils: {};
+		loaders: {};
+		actions: {};
+	}
+) {
 	return {
-		config: configFn({
+		config: configFn(routes, {
 			...config,
 			components: {},
 		}),
@@ -149,7 +151,7 @@ function initialConfigFn<TConfig extends Config>(config: {
 
 			return initialConfigFn<
 				Omit<TConfig, 'loaders'> & { loaders: TLoaders[number] }
-			>({
+			>(routes, {
 				...config,
 				loaders: loadersObject,
 			});
@@ -159,7 +161,7 @@ function initialConfigFn<TConfig extends Config>(config: {
 
 			return initialConfigFn<
 				Omit<TConfig, 'actions'> & { actions: TActions[number] }
-			>({
+			>(routes, {
 				...config,
 				actions: actionsObject,
 			});
@@ -167,48 +169,27 @@ function initialConfigFn<TConfig extends Config>(config: {
 	};
 }
 
-// ADD INIT
-function redirect(redirectFunction: RedirectFunction) {
-	return (
-		to: string,
-		options?: {
-			params?: Record<string, string>;
-			searchParams?: Record<string, string>;
-		}
-	) =>
-		redirectFunction(
-			`${generatePath(to, options?.params)}${
-				options?.searchParams
-					? `?${createSearchParams(options.searchParams)}`
-					: ''
-			}`
-		);
-}
-
-function enhanceUtils(utils: Utils) {
-	return {
-		...utils,
-		redirect: utils.redirect && redirect(utils.redirect),
-	};
-}
-
 export function createRoutes<
 	TRoutes extends readonly RouteInput[],
-	TUtils extends Utils
+	TUtils extends Config['utils']
 >(routes: TRoutes, utils: TUtils) {
-	type Routes = TransformRoutes<TRoutes>;
-	type FlatRoutes = Extract<FlattenRoutes<Routes>, { id: string; params: {} }>;
+	interface TConfig {
+		routes: Extract<
+			FlattenRoutes<TransformRoutes<TRoutes>>,
+			{ id: string; params: {} }
+		>;
+		utils: TUtils;
+		loaders: never;
+		actions: never;
+	}
 
 	const enhancedUtils = enhanceUtils(utils);
 
 	return {
 		createLoader<
-			TId extends FlatRoutes['id'],
+			TId extends TConfig['routes']['id'],
 			TReturn extends ReturnType<LoaderFunction>
-		>(
-			id: TId,
-			loader: (args: LoaderWrapperArgs<FlatRoutes, TUtils, TId>) => TReturn
-		) {
+		>(id: TId, loader: (args: LoaderWrapperArgs<TConfig, TId>) => TReturn) {
 			return {
 				type: symbols.loader,
 				id,
@@ -218,12 +199,9 @@ export function createRoutes<
 			} as const;
 		},
 		createAction<
-			TId extends FlatRoutes['id'],
+			TId extends TConfig['routes']['id'],
 			TReturn extends ReturnType<ActionFunction>
-		>(
-			id: TId,
-			action: (args: ActionWrapperArgs<FlatRoutes, TUtils, TId>) => TReturn
-		) {
+		>(id: TId, action: (args: ActionWrapperArgs<TConfig, TId>) => TReturn) {
 			return {
 				type: symbols.action,
 				id,
@@ -232,13 +210,7 @@ export function createRoutes<
 				},
 			} as const;
 		},
-		initialConfig: initialConfigFn<{
-			routes: FlatRoutes;
-			utils: TUtils;
-			loaders: never;
-			actions: never;
-		}>({
-			routes: transformRoutes(routes),
+		initialConfig: initialConfigFn<TConfig>(transformRoutes(routes), {
 			utils: enhancedUtils,
 			loaders: {},
 			actions: {},
