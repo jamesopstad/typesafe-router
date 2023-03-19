@@ -121,7 +121,7 @@ function configFn(
 	};
 }
 
-function initialConfigFn<TConfig extends Config>(
+function initialConfigFn<TConfig extends Config, TOmit extends string = never>(
 	routes: Route[],
 	config: {
 		utils: {};
@@ -129,7 +129,7 @@ function initialConfigFn<TConfig extends Config>(
 		actions: {};
 	}
 ) {
-	return {
+	const output = {
 		config: configFn(routes, {
 			...config,
 			components: {},
@@ -150,7 +150,8 @@ function initialConfigFn<TConfig extends Config>(
 			const loadersObject = toObject(loaders, symbols.loader);
 
 			return initialConfigFn<
-				Omit<TConfig, 'loaders'> & { loaders: TLoaders[number] }
+				Omit<TConfig, 'loaders'> & { loaders: TLoaders[number] },
+				TOmit | 'addLoaders'
 			>(routes, {
 				...config,
 				loaders: loadersObject,
@@ -160,13 +161,16 @@ function initialConfigFn<TConfig extends Config>(
 			const actionsObject = toObject(actions, symbols.action);
 
 			return initialConfigFn<
-				Omit<TConfig, 'actions'> & { actions: TActions[number] }
+				Omit<TConfig, 'actions'> & { actions: TActions[number] },
+				TOmit | 'addActions'
 			>(routes, {
 				...config,
 				actions: actionsObject,
 			});
 		},
 	};
+
+	return output as Omit<typeof output, TOmit>;
 }
 
 export function createRoutes<
