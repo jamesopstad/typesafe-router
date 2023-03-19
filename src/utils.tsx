@@ -1,6 +1,7 @@
 import type { ParamsObject } from './types';
 import {
 	Link,
+	NavLink,
 	useParams,
 	useLoaderData,
 	useActionData,
@@ -13,6 +14,7 @@ import type { RedirectFunction, URLSearchParamsInit } from 'react-router-dom';
 export interface Utils {
 	redirect: RedirectFunction;
 	Link: typeof Link;
+	NavLink: typeof NavLink;
 	useParams: typeof useParams;
 	useActionData: typeof useActionData;
 	useLoaderData: typeof useLoaderData;
@@ -28,7 +30,7 @@ function createPath(
 	}`;
 }
 
-function _redirect(originalRedirect: RedirectFunction) {
+function _redirect(original: RedirectFunction) {
 	return (
 		to: string,
 		options?: { init?: Parameters<Utils['redirect']>[1] } & {
@@ -37,14 +39,14 @@ function _redirect(originalRedirect: RedirectFunction) {
 		}
 	) => {
 		if (!options) {
-			return originalRedirect(to);
+			return original(to);
 		}
 
-		return originalRedirect(createPath(to, options), options.init);
+		return original(createPath(to, options), options.init);
 	};
 }
 
-function _Link(OriginalLink: Utils['Link']) {
+function _Link(Original: Utils['Link']) {
 	return ({
 		to,
 		params,
@@ -55,9 +57,21 @@ function _Link(OriginalLink: Utils['Link']) {
 		to: string;
 		params?: ParamsObject;
 		searchParams?: URLSearchParamsInit;
-	}) => (
-		<OriginalLink {...rest} to={createPath(to, { params, searchParams })} />
-	);
+	}) => <Original {...rest} to={createPath(to, { params, searchParams })} />;
+}
+
+function _NavLink(Original: Utils['NavLink']) {
+	return ({
+		to,
+		params,
+		searchParams,
+		relative,
+		...rest
+	}: Omit<Parameters<Utils['NavLink']>[0], 'to'> & {
+		to: string;
+		params?: ParamsObject;
+		searchParams: URLSearchParamsInit;
+	}) => <Original {...rest} to={createPath(to, { params, searchParams })} />;
 }
 
 export function enhanceUtils(utils: Partial<Utils>) {
@@ -65,5 +79,6 @@ export function enhanceUtils(utils: Partial<Utils>) {
 		...utils,
 		redirect: utils.redirect && _redirect(utils.redirect),
 		Link: utils.Link && _Link(utils.Link),
+		NavLink: utils.NavLink && _NavLink(utils.NavLink),
 	};
 }

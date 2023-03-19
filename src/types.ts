@@ -430,6 +430,10 @@ type Link<TPaths extends string> = <TPath extends TPaths>(
 	props: LinkProps<TPath, Parameters<Utils['Link']>[0]>
 ) => ReturnType<Utils['Link']>;
 
+type NavLink<TPaths extends string> = <TPath extends TPaths>(
+	props: LinkProps<TPath, Parameters<Utils['NavLink']>[0]>
+) => ReturnType<Utils['NavLink']>;
+
 type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
 
 // ADD SUPPORT FOR DEFER
@@ -459,6 +463,7 @@ interface ComponentUtils<
 	TPaths extends string = Paths<TConfig['routes'], TRoute>
 > {
 	Link: Link<TPaths>;
+	NavLink: NavLink<TPaths>;
 	useParams: () => Params<TConfig['routes'], TRoute>;
 	useActionData: () => ActionData<
 		ExtractById<TConfig['actions'], TRoute['id']>
