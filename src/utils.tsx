@@ -3,6 +3,7 @@ import {
 	Link,
 	NavLink,
 	Navigate,
+	Form,
 	useNavigate,
 	useParams,
 	useLoaderData,
@@ -22,6 +23,7 @@ export interface Utils {
 	Link: typeof Link;
 	NavLink: typeof NavLink;
 	Navigate: typeof Navigate;
+	Form: typeof Form;
 	useNavigate: typeof useNavigate;
 	useParams: typeof useParams;
 	useActionData: typeof useActionData;

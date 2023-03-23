@@ -171,9 +171,16 @@ export type FlattenRoutes<
 
 //#region Paths
 
+type FilterPathById<
+	TRouteId extends string,
+	TFilterIds extends string,
+	TPath extends string
+> = TRouteId extends TFilterIds ? TPath : never;
+
 type _DescendantPaths<
 	TRoutes extends FlatRoute,
 	TRoute extends FlatRoute,
+	TFilterIds extends string,
 	TParentPath extends string,
 	TCumulativePath extends string = `${TParentPath}${TRoute extends {
 		path: infer TPath extends string;
@@ -181,18 +188,24 @@ type _DescendantPaths<
 		? `${TParentPath extends '' ? '' : '/'}${TPath}`
 		: ''}`
 > =
-	| (TCumulativePath extends '' ? never : TCumulativePath)
-	| DescendantPaths<TRoutes, TRoute, TCumulativePath>;
+	| FilterPathById<
+			TRoute['id'],
+			TFilterIds,
+			TCumulativePath extends '' ? never : TCumulativePath
+	  >
+	| DescendantPaths<TRoutes, TRoute, TFilterIds, TCumulativePath>;
 
 export type DescendantPaths<
 	TRoutes extends FlatRoute,
 	TRoute extends FlatRoute,
+	TFilterIds extends string = string,
 	TParentPath extends string = ''
 > = TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
 	? {
 			[TChildId in TChildIds]: _DescendantPaths<
 				TRoutes,
 				ExtractById<TRoutes, TChildId>,
+				TFilterIds,
 				TParentPath
 			>;
 	  }[TChildIds]
@@ -201,6 +214,7 @@ export type DescendantPaths<
 export type AncestorPaths<
 	TRoutes extends FlatRoute,
 	TRoute extends FlatRoute,
+	TFilterIds extends string = string,
 	TPathPrefix extends string = '..',
 	TParentRoute = TRoute extends {
 		parentId: infer TParentId extends TRoutes['id'];
@@ -210,37 +224,46 @@ export type AncestorPaths<
 > = TParentRoute extends FlatRoute
 	? TParentRoute extends { path: string }
 		?
-				| TPathPrefix
-				| DescendantPaths<TRoutes, TParentRoute, TPathPrefix>
-				| AncestorPaths<TRoutes, TParentRoute, `../${TPathPrefix}`>
-		: AncestorPaths<TRoutes, TParentRoute, TPathPrefix>
+				| FilterPathById<TRoute['id'], TFilterIds, TPathPrefix>
+				| DescendantPaths<TRoutes, TParentRoute, TFilterIds, TPathPrefix>
+				| AncestorPaths<TRoutes, TParentRoute, TFilterIds, `../${TPathPrefix}`>
+		: AncestorPaths<TRoutes, TParentRoute, TFilterIds, TPathPrefix>
 	: never;
 
 type _AbsolutePaths<
 	TRoutes extends FlatRoute,
 	TRoute extends FlatRoute,
+	TFilterIds extends string,
 	TRootPath extends string = TRoute extends { path: infer TPath extends string }
 		? TPath
 		: never
 > = [TRootPath] extends [never]
 	? TRoute extends { childIds: infer TChildIds extends TRoutes['id'] }
-		? AbsolutePaths<TRoutes, TChildIds>
+		? AbsolutePaths<TRoutes, TFilterIds, TChildIds>
 		: never
-	: `/${TRootPath | DescendantPaths<TRoutes, TRoute, TRootPath>}`;
+	: `/${
+			| FilterPathById<TRoute['id'], TFilterIds, TRootPath>
+			| DescendantPaths<TRoutes, TRoute, TFilterIds, TRootPath>}`;
 
 export type AbsolutePaths<
 	TRoutes extends FlatRoute,
+	TFilterIds extends string = string,
 	TRootRouteIds extends TRoutes['id'] = Exclude<
 		TRoutes,
 		{ parentId: string }
 	>['id']
 > = {
-	[TId in TRootRouteIds]: _AbsolutePaths<TRoutes, ExtractById<TRoutes, TId>>;
+	[TId in TRootRouteIds]: _AbsolutePaths<
+		TRoutes,
+		ExtractById<TRoutes, TId>,
+		TFilterIds
+	>;
 }[TRootRouteIds];
 
 export type Paths<
 	TRoutes extends FlatRoute,
 	TRoute extends FlatRoute,
+	TFilterIds extends string = string,
 	TRouteOrParent extends FlatRoute = TRoute extends {
 		index: true;
 		parentId: infer TParentId extends TRoutes['id'];
@@ -248,10 +271,10 @@ export type Paths<
 		? ExtractById<TRoutes, TParentId>
 		: TRoute
 > =
-	| ''
-	| AbsolutePaths<TRoutes>
-	| AncestorPaths<TRoutes, TRouteOrParent>
-	| DescendantPaths<TRoutes, TRouteOrParent>;
+	| FilterPathById<TRoute['id'], TFilterIds, ''>
+	| AbsolutePaths<TRoutes, TFilterIds>
+	| AncestorPaths<TRoutes, TRouteOrParent, TFilterIds>
+	| DescendantPaths<TRoutes, TRouteOrParent, TFilterIds>;
 
 type _PathParams<TPath extends string> = TPath extends `${infer L}/${infer R}`
 	? _PathParams<L> | _PathParams<R>
@@ -446,6 +469,20 @@ interface NavigateFunction<TPaths extends string> {
 	(delta: number): void;
 }
 
+type Form<TLoaderPaths extends string, TActionPaths extends string> = <
+	TPaths extends [TMethod] extends [never]
+		? TLoaderPaths
+		: TMethod extends 'get'
+		? TLoaderPaths
+		: TActionPaths,
+	TPath extends TPaths,
+	TMethod extends 'get' | 'post' = never
+>(
+	props: { method?: TMethod } & (TPaths extends ''
+		? { action?: TPath }
+		: { action: TPath })
+) => ReturnType<Utils['Form']>;
+
 type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
 
 // ADD SUPPORT FOR DEFER ETC.
@@ -472,11 +509,22 @@ type UseRouteLoaderData<
 interface ComponentUtils<
 	TConfig extends Config,
 	TRoute extends FlatRoute,
-	TPaths extends string = Paths<TConfig['routes'], TRoute>
+	TPaths extends string = Paths<TConfig['routes'], TRoute>,
+	TLoaderPaths extends string = Paths<
+		TConfig['routes'],
+		TRoute,
+		TConfig['loaders']['id']
+	>,
+	TActionPaths extends string = Paths<
+		TConfig['routes'],
+		TRoute,
+		TConfig['actions']['id']
+	>
 > {
 	Link: Link<TPaths>;
 	NavLink: NavLink<TPaths>;
 	Navigate: Navigate<TPaths>;
+	Form: Form<TLoaderPaths, TActionPaths>;
 	useNavigate: () => NavigateFunction<TPaths>;
 	useParams: () => Params<TConfig['routes'], TRoute>;
 	useActionData: () => ActionData<
