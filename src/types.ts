@@ -350,6 +350,7 @@ export type ParamsObject<TParams extends string = string> = Record<
 
 type LinkOptions<TBaseOptions> = Omit<TBaseOptions, 'to' | 'relative'> & {
 	searchParams?: URLSearchParamsInit;
+	hash?: string;
 };
 
 type LinkProps<
@@ -433,6 +434,8 @@ type Link<TPaths extends string> = <TPath extends TPaths>(
 type NavLink<TPaths extends string> = <TPath extends TPaths>(
 	props: LinkProps<TPath, Parameters<Utils['NavLink']>[0]>
 ) => ReturnType<Utils['NavLink']>;
+
+// type UseNavigate<TPaths extends string> = <TPath extends TPaths)(...args: LinkParams<TPath, Parameters<Utils['useNavigate']>[0]>) => ReturnType<Utils['useNavigate']>
 
 type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
 

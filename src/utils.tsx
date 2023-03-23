@@ -2,6 +2,7 @@ import type { ParamsObject } from './types';
 import {
 	Link,
 	NavLink,
+	useNavigate,
 	useParams,
 	useLoaderData,
 	useActionData,
@@ -15,28 +16,29 @@ export interface Utils {
 	redirect: RedirectFunction;
 	Link: typeof Link;
 	NavLink: typeof NavLink;
+	useNavigate: typeof useNavigate;
 	useParams: typeof useParams;
 	useActionData: typeof useActionData;
 	useLoaderData: typeof useLoaderData;
 	useRouteLoaderData: typeof useRouteLoaderData;
 }
 
-function createPath(
-	to: string,
-	options: { params?: ParamsObject; searchParams?: URLSearchParamsInit }
-) {
+interface PathOptions {
+	params?: ParamsObject;
+	searchParams?: URLSearchParamsInit;
+	hash?: string;
+}
+
+function createPath(to: string, options: PathOptions) {
 	return `${generatePath(to, options.params)}${
 		options.searchParams ? `?${createSearchParams(options.searchParams)}` : ''
-	}`;
+	}${options.hash ? `#${options.hash}` : ''}`;
 }
 
 function _redirect(original: RedirectFunction) {
 	return (
 		to: string,
-		options?: { init?: Parameters<Utils['redirect']>[1] } & {
-			params?: ParamsObject;
-			searchParams?: URLSearchParamsInit;
-		}
+		options?: { init?: Parameters<Utils['redirect']>[1] } & PathOptions
 	) => {
 		if (!options) {
 			return original(to);
@@ -51,13 +53,14 @@ function _Link(Original: Utils['Link']) {
 		to,
 		params,
 		searchParams,
+		hash,
 		relative,
 		...rest
 	}: Omit<Parameters<Utils['Link']>[0], 'to'> & {
 		to: string;
-		params?: ParamsObject;
-		searchParams?: URLSearchParamsInit;
-	}) => <Original {...rest} to={createPath(to, { params, searchParams })} />;
+	} & PathOptions) => (
+		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
+	);
 }
 
 function _NavLink(Original: Utils['NavLink']) {
@@ -65,13 +68,14 @@ function _NavLink(Original: Utils['NavLink']) {
 		to,
 		params,
 		searchParams,
+		hash,
 		relative,
 		...rest
 	}: Omit<Parameters<Utils['NavLink']>[0], 'to'> & {
 		to: string;
-		params?: ParamsObject;
-		searchParams: URLSearchParamsInit;
-	}) => <Original {...rest} to={createPath(to, { params, searchParams })} />;
+	} & PathOptions) => (
+		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
+	);
 }
 
 export function enhanceUtils(utils: Partial<Utils>) {
