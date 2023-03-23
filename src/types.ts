@@ -436,6 +436,10 @@ type NavLink<TPaths extends string> = <TPath extends TPaths>(
 	props: LinkProps<TPath, Parameters<Utils['NavLink']>[0]>
 ) => ReturnType<Utils['NavLink']>;
 
+type Navigate<TPaths extends string> = <TPath extends TPaths>(
+	props: LinkProps<TPath, Parameters<Utils['Navigate']>[0]>
+) => ReturnType<Utils['Navigate']>;
+
 interface NavigateFunction<TPaths extends string> {
 	<TPath extends TPaths>(...args: LinkParams<TPath, NavigateOptions>): void;
 	(delta: number): void;
@@ -471,6 +475,7 @@ interface ComponentUtils<
 > {
 	Link: Link<TPaths>;
 	NavLink: NavLink<TPaths>;
+	Navigate: Navigate<TPaths>;
 	useNavigate: () => NavigateFunction<TPaths>;
 	useParams: () => Params<TConfig['routes'], TRoute>;
 	useActionData: () => ActionData<

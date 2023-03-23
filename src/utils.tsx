@@ -84,6 +84,21 @@ function _NavLink(Original: Utils['NavLink']) {
 	);
 }
 
+function _Navigate(Original: Utils['Navigate']) {
+	return ({
+		to,
+		params,
+		searchParams,
+		hash,
+		relative,
+		...rest
+	}: Omit<Parameters<Utils['Navigate']>[0], 'to'> & {
+		to: string;
+	} & PathOptions) => (
+		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
+	);
+}
+
 function _useNavigate(original: Utils['useNavigate']) {
 	return () => {
 		const navigate = original();
@@ -106,6 +121,7 @@ export function enhanceUtils(utils: Partial<Utils>) {
 		redirect: utils.redirect && _redirect(utils.redirect),
 		Link: utils.Link && _Link(utils.Link),
 		NavLink: utils.NavLink && _NavLink(utils.NavLink),
+		Navigate: utils.Navigate && _Navigate(utils.Navigate),
 		useNavigate: utils.useNavigate && _useNavigate(utils.useNavigate),
 	};
 }
