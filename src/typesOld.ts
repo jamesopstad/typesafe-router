@@ -1,6 +1,9 @@
 import type * as React from 'react';
 import type { LoaderFunction, ActionFunction } from 'react-router-dom';
-import type { Prettify } from './utils';
+
+type Prettify<T> = {
+	[K in keyof T]: T[K];
+} & {};
 
 //#region input types
 

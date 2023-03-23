@@ -1,4 +1,3 @@
-import { describe, it, expectTypeOf } from 'vitest';
 import type {
 	NormalizePath,
 	SetIdSegment,
@@ -6,7 +5,7 @@ import type {
 	SetParams,
 	ConvertOptionalPathSegments,
 	FlattenRoutes,
-	ExtractRoutes,
+	ExtractById,
 	DescendantPaths,
 	AncestorPaths,
 	AbsolutePaths,
@@ -16,6 +15,7 @@ import type {
 	DescendantParams,
 	Params,
 } from './types';
+import { describe, it, expectTypeOf } from 'vitest';
 
 type TestRoutes = [
 	{
@@ -304,7 +304,7 @@ describe('Paths', () => {
 	type AbsolutePathsResult = AbsolutePaths<Routes>;
 
 	it('returns the correct descendant paths', () => {
-		type Route = ExtractRoutes<Routes, '/'>;
+		type Route = ExtractById<Routes, '/'>;
 
 		expectTypeOf<DescendantPaths<Routes, Route>>().toEqualTypeOf<
 			| ':1'
@@ -318,7 +318,7 @@ describe('Paths', () => {
 	});
 
 	it('returns the correct ancestor paths', () => {
-		type Route = ExtractRoutes<Routes, '/:1/_/:1-1/:1-1-1'>;
+		type Route = ExtractById<Routes, '/:1/_/:1-1/:1-1-1'>;
 
 		expectTypeOf<AncestorPaths<Routes, Route>>().toEqualTypeOf<
 			| '..'
@@ -355,7 +355,7 @@ describe('Paths', () => {
 	});
 
 	it('returns the correct combined paths', () => {
-		type Route = ExtractRoutes<Routes, '/:1/_/:1-1'>;
+		type Route = ExtractById<Routes, '/:1/_/:1-1'>;
 
 		expectTypeOf<Paths<Routes, Route>>().toEqualTypeOf<
 			| AbsolutePathsResult
@@ -377,7 +377,7 @@ describe('Paths', () => {
 	});
 
 	it('returns the correct paths for index routes', () => {
-		type Route = ExtractRoutes<Routes, '/2/_index'>;
+		type Route = ExtractById<Routes, '/2/_index'>;
 
 		expectTypeOf<Paths<Routes, Route>>().toEqualTypeOf<
 			| AbsolutePathsResult
@@ -433,13 +433,13 @@ describe('Params', () => {
 	type Routes = FlattenRoutes<TransformedRoutes>;
 
 	it('returns the correct current params', () => {
-		type Route = ExtractRoutes<Routes, '/:1/_/:1-1/:1-1-1'>;
+		type Route = ExtractById<Routes, '/:1/_/:1-1/:1-1-1'>;
 
 		expectTypeOf<Route['params']>().toEqualTypeOf<{ '1-1-1': string }>();
 	});
 
 	it('returns the correct ancestor params', () => {
-		type Route = ExtractRoutes<Routes, '/:1/_/:1-1/:1-1-1'>;
+		type Route = ExtractById<Routes, '/:1/_/:1-1/:1-1-1'>;
 
 		expectTypeOf<AncestorParams<Routes, Route>>().toEqualTypeOf<{
 			'1': string;
@@ -448,7 +448,7 @@ describe('Params', () => {
 	});
 
 	it('returns the correct descendant params', () => {
-		type Route = ExtractRoutes<Routes, '/'>;
+		type Route = ExtractById<Routes, '/'>;
 
 		expectTypeOf<DescendantParams<Routes, Route, {}>>().toEqualTypeOf<
 			| {}
@@ -461,7 +461,7 @@ describe('Params', () => {
 	});
 
 	it('returns the correct combined params', () => {
-		type Route = ExtractRoutes<Routes, '/:1/_/:1-1'>;
+		type Route = ExtractById<Routes, '/:1/_/:1-1'>;
 
 		expectTypeOf<Params<Routes, Route>>().toEqualTypeOf<
 			| { '1': string; '1-1': string }

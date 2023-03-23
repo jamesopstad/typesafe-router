@@ -1,12 +1,3 @@
-import {
-	Link as _Link,
-	generatePath,
-	useParams,
-	useActionData,
-	useLoaderData,
-	useRouteLoaderData,
-} from 'react-router-dom';
-import type * as React from 'react';
 import type {
 	RouteObject,
 	RouteObjectWithId,
@@ -15,6 +6,15 @@ import type {
 	FlattenRoutes,
 	Utils,
 } from './typesOld';
+import type * as React from 'react';
+import {
+	Link as _Link,
+	generatePath,
+	useParams,
+	useActionData,
+	useLoaderData,
+	useRouteLoaderData,
+} from 'react-router-dom';
 
 //#region Function exports
 
