@@ -359,6 +359,7 @@ describe('Paths', () => {
 
 		expectTypeOf<Paths<Routes, Route>>().toEqualTypeOf<
 			| AbsolutePathsResult
+			| ''
 			| ':1-1-1'
 			| '..'
 			| '../:1-1'
@@ -376,11 +377,12 @@ describe('Paths', () => {
 		>();
 	});
 
-	it('returns the correct paths for index routes', () => {
+	it('returns the correct combined paths for index routes', () => {
 		type Route = ExtractById<Routes, '/2/_index'>;
 
 		expectTypeOf<Paths<Routes, Route>>().toEqualTypeOf<
 			| AbsolutePathsResult
+			| ''
 			| ':2-1'
 			| '..'
 			| '../:1'

@@ -248,6 +248,7 @@ export type Paths<
 		? ExtractById<TRoutes, TParentId>
 		: TRoute
 > =
+	| ''
 	| AbsolutePaths<TRoutes>
 	| AncestorPaths<TRoutes, TRouteOrParent>
 	| DescendantPaths<TRoutes, TRouteOrParent>;
