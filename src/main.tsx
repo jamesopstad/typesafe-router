@@ -71,6 +71,7 @@ export function finalize(
 		return {
 			...route,
 			loader: config.loaders[route.id],
+			action: config.actions[route.id],
 			Component: config.components[route.id],
 			children: route.children && finalize(route.children, config),
 		};

@@ -16,6 +16,10 @@ import type {
 	RedirectFunction,
 	URLSearchParamsInit,
 	NavigateOptions,
+	LinkProps,
+	NavLinkProps,
+	NavigateProps,
+	FormProps,
 } from 'react-router-dom';
 
 export interface Utils {
@@ -64,7 +68,7 @@ function _Link(Original: Utils['Link']) {
 		hash,
 		relative,
 		...rest
-	}: Omit<Parameters<Utils['Link']>[0], 'to'> & {
+	}: Omit<LinkProps, 'to'> & {
 		to: string;
 	} & PathOptions) => (
 		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
@@ -79,7 +83,7 @@ function _NavLink(Original: Utils['NavLink']) {
 		hash,
 		relative,
 		...rest
-	}: Omit<Parameters<Utils['NavLink']>[0], 'to'> & {
+	}: Omit<NavLinkProps, 'to'> & {
 		to: string;
 	} & PathOptions) => (
 		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
@@ -94,7 +98,7 @@ function _Navigate(Original: Utils['Navigate']) {
 		hash,
 		relative,
 		...rest
-	}: Omit<Parameters<Utils['Navigate']>[0], 'to'> & {
+	}: Omit<NavigateProps, 'to'> & {
 		to: string;
 	} & PathOptions) => (
 		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
@@ -117,6 +121,17 @@ function _useNavigate(original: Utils['useNavigate']) {
 	};
 }
 
+function _Form(Original: Utils['Form']) {
+	return ({
+		action = '',
+		params,
+		relative,
+		...rest
+	}: FormProps & { params?: ParamsObject }) => (
+		<Original {...rest} action={createPath(action, { params })} />
+	);
+}
+
 export function enhanceUtils(utils: Partial<Utils>) {
 	return {
 		...utils,
@@ -125,5 +140,6 @@ export function enhanceUtils(utils: Partial<Utils>) {
 		NavLink: utils.NavLink && _NavLink(utils.NavLink),
 		Navigate: utils.Navigate && _Navigate(utils.Navigate),
 		useNavigate: utils.useNavigate && _useNavigate(utils.useNavigate),
+		Form: utils.Form && _Form(utils.Form),
 	};
 }

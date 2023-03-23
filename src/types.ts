@@ -5,7 +5,12 @@ import type {
 	LoaderFunctionArgs,
 	ActionFunctionArgs,
 	URLSearchParamsInit,
+	LinkProps,
+	NavLinkProps,
+	NavigateProps,
 	NavigateOptions,
+	FormMethod,
+	FormProps,
 } from 'react-router-dom';
 
 //#region Utils
@@ -271,7 +276,6 @@ export type Paths<
 		? ExtractById<TRoutes, TParentId>
 		: TRoute
 > =
-	| FilterPathById<TRoute['id'], TFilterIds, ''>
 	| AbsolutePaths<TRoutes, TFilterIds>
 	| AncestorPaths<TRoutes, TRouteOrParent, TFilterIds>
 	| DescendantPaths<TRoutes, TRouteOrParent, TFilterIds>;
@@ -378,7 +382,7 @@ type LinkOptions<TBaseOptions> = Omit<TBaseOptions, 'to' | 'relative'> & {
 	hash?: string;
 };
 
-type LinkProps<
+type _LinkProps<
 	TPath extends string,
 	TBaseOptions,
 	TPathParams extends string = PathParams<TPath>,
@@ -453,21 +457,26 @@ export type ActionWrapperArgs<
 //#region Components
 
 type Link<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, Parameters<Utils['Link']>[0]>
+	props: _LinkProps<TPath, LinkProps>
 ) => ReturnType<Utils['Link']>;
 
 type NavLink<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, Parameters<Utils['NavLink']>[0]>
+	props: _LinkProps<TPath, NavLinkProps>
 ) => ReturnType<Utils['NavLink']>;
 
 type Navigate<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, Parameters<Utils['Navigate']>[0]>
+	props: _LinkProps<TPath, NavigateProps>
 ) => ReturnType<Utils['Navigate']>;
 
 interface NavigateFunction<TPaths extends string> {
 	<TPath extends TPaths>(...args: LinkParams<TPath, NavigateOptions>): void;
 	(delta: number): void;
 }
+
+type _SubmitProps<
+	TPath extends string,
+	TPathParams extends string = PathParams<TPath>
+> = [TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> };
 
 type Form<TLoaderPaths extends string, TActionPaths extends string> = <
 	TPaths extends [TMethod] extends [never]
@@ -476,11 +485,13 @@ type Form<TLoaderPaths extends string, TActionPaths extends string> = <
 		? TLoaderPaths
 		: TActionPaths,
 	TPath extends TPaths,
-	TMethod extends 'get' | 'post' = never
+	TMethod extends FormMethod = never,
+	TPathParams extends string = PathParams<TPath>
 >(
-	props: { method?: TMethod } & (TPaths extends ''
-		? { action?: TPath }
-		: { action: TPath })
+	props: Omit<FormProps, 'method' | 'action' | 'relative'> & {
+		method?: TMethod;
+	} & (TPaths extends '' ? { action?: TPath } : { action: TPath }) &
+		([TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> })
 ) => ReturnType<Utils['Form']>;
 
 type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
@@ -509,17 +520,15 @@ type UseRouteLoaderData<
 interface ComponentUtils<
 	TConfig extends Config,
 	TRoute extends FlatRoute,
+	TLoader extends Loader = ExtractById<TConfig['loaders'], TRoute['id']>,
+	TAction extends Action = ExtractById<TConfig['actions'], TRoute['id']>,
 	TPaths extends string = Paths<TConfig['routes'], TRoute>,
-	TLoaderPaths extends string = Paths<
-		TConfig['routes'],
-		TRoute,
-		TConfig['loaders']['id']
-	>,
-	TActionPaths extends string = Paths<
-		TConfig['routes'],
-		TRoute,
-		TConfig['actions']['id']
-	>
+	TLoaderPaths extends string =
+		| (TLoader extends Loader ? '' : never)
+		| Paths<TConfig['routes'], TRoute, TConfig['loaders']['id']>,
+	TActionPaths extends string =
+		| (TAction extends Action ? '' : never)
+		| Paths<TConfig['routes'], TRoute, TConfig['actions']['id']>
 > {
 	Link: Link<TPaths>;
 	NavLink: NavLink<TPaths>;
@@ -527,12 +536,8 @@ interface ComponentUtils<
 	Form: Form<TLoaderPaths, TActionPaths>;
 	useNavigate: () => NavigateFunction<TPaths>;
 	useParams: () => Params<TConfig['routes'], TRoute>;
-	useActionData: () => ActionData<
-		ExtractById<TConfig['actions'], TRoute['id']>
-	>;
-	useLoaderData: () => LoaderData<
-		ExtractById<TConfig['loaders'], TRoute['id']>
-	>;
+	useActionData: () => ActionData<TAction>;
+	useLoaderData: () => LoaderData<TLoader>;
 	useRouteLoaderData: UseRouteLoaderData<TConfig, TRoute>;
 }
 

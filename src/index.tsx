@@ -1,0 +1,1 @@
+export { createRoutes } from './main';

@@ -359,7 +359,6 @@ describe('Paths', () => {
 
 		expectTypeOf<Paths<Routes, Route>>().toEqualTypeOf<
 			| AbsolutePathsResult
-			| ''
 			| ':1-1-1'
 			| '..'
 			| '../:1-1'
@@ -382,7 +381,6 @@ describe('Paths', () => {
 
 		expectTypeOf<Paths<Routes, Route>>().toEqualTypeOf<
 			| AbsolutePathsResult
-			| ''
 			| ':2-1'
 			| '..'
 			| '../:1'
