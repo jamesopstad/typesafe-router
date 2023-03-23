@@ -2,6 +2,7 @@ import type { ParamsObject } from './types';
 import {
 	Link,
 	NavLink,
+	Navigate,
 	useNavigate,
 	useParams,
 	useLoaderData,
@@ -10,12 +11,17 @@ import {
 	generatePath,
 	createSearchParams,
 } from 'react-router-dom';
-import type { RedirectFunction, URLSearchParamsInit } from 'react-router-dom';
+import type {
+	RedirectFunction,
+	URLSearchParamsInit,
+	NavigateOptions,
+} from 'react-router-dom';
 
 export interface Utils {
 	redirect: RedirectFunction;
 	Link: typeof Link;
 	NavLink: typeof NavLink;
+	Navigate: typeof Navigate;
 	useNavigate: typeof useNavigate;
 	useParams: typeof useParams;
 	useActionData: typeof useActionData;
@@ -78,11 +84,28 @@ function _NavLink(Original: Utils['NavLink']) {
 	);
 }
 
+function _useNavigate(original: Utils['useNavigate']) {
+	return () => {
+		const navigate = original();
+
+		return (to: string, options?: NavigateOptions & PathOptions) => {
+			if (!options) {
+				return navigate(to);
+			}
+
+			const { params, searchParams, hash, relative, ...rest } = options;
+
+			return navigate(createPath(to, { params, searchParams, hash }), rest);
+		};
+	};
+}
+
 export function enhanceUtils(utils: Partial<Utils>) {
 	return {
 		...utils,
 		redirect: utils.redirect && _redirect(utils.redirect),
 		Link: utils.Link && _Link(utils.Link),
 		NavLink: utils.NavLink && _NavLink(utils.NavLink),
+		useNavigate: utils.useNavigate && _useNavigate(utils.useNavigate),
 	};
 }

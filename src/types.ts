@@ -5,6 +5,7 @@ import type {
 	LoaderFunctionArgs,
 	ActionFunctionArgs,
 	URLSearchParamsInit,
+	NavigateOptions,
 } from 'react-router-dom';
 
 //#region Utils
@@ -435,11 +436,14 @@ type NavLink<TPaths extends string> = <TPath extends TPaths>(
 	props: LinkProps<TPath, Parameters<Utils['NavLink']>[0]>
 ) => ReturnType<Utils['NavLink']>;
 
-// type UseNavigate<TPaths extends string> = <TPath extends TPaths)(...args: LinkParams<TPath, Parameters<Utils['useNavigate']>[0]>) => ReturnType<Utils['useNavigate']>
+interface NavigateFunction<TPaths extends string> {
+	<TPath extends TPaths>(...args: LinkParams<TPath, NavigateOptions>): void;
+	(delta: number): void;
+}
 
 type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
 
-// ADD SUPPORT FOR DEFER
+// ADD SUPPORT FOR DEFER ETC.
 type LoaderData<TLoader extends Loader> = Awaited<ReturnType<TLoader['value']>>;
 
 type UseRouteLoaderData<
@@ -467,6 +471,7 @@ interface ComponentUtils<
 > {
 	Link: Link<TPaths>;
 	NavLink: NavLink<TPaths>;
+	useNavigate: () => NavigateFunction<TPaths>;
 	useParams: () => Params<TConfig['routes'], TRoute>;
 	useActionData: () => ActionData<
 		ExtractById<TConfig['actions'], TRoute['id']>
