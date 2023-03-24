@@ -4,6 +4,7 @@ import {
 	NavLink,
 	Navigate,
 	Form,
+	useSubmit,
 	useNavigate,
 	useParams,
 	useLoaderData,
@@ -20,6 +21,8 @@ import type {
 	NavLinkProps,
 	NavigateProps,
 	FormProps,
+	SubmitFunction,
+	SubmitOptions,
 } from 'react-router-dom';
 
 export interface Utils {
@@ -28,6 +31,7 @@ export interface Utils {
 	NavLink: typeof NavLink;
 	Navigate: typeof Navigate;
 	Form: typeof Form;
+	useSubmit: typeof useSubmit;
 	useNavigate: typeof useNavigate;
 	useParams: typeof useParams;
 	useActionData: typeof useActionData;
@@ -132,6 +136,28 @@ function _Form(Original: Utils['Form']) {
 	);
 }
 
+function _useSubmit(original: Utils['useSubmit']) {
+	return () => {
+		const submit = original();
+
+		return (
+			target: Parameters<SubmitFunction>[0],
+			options?: SubmitOptions & { params?: ParamsObject }
+		) => {
+			if (!options) {
+				return submit(target);
+			}
+
+			const { action = '', params, relative, ...rest } = options;
+
+			return submit(target, {
+				...rest,
+				action: createPath(action, { params }),
+			});
+		};
+	};
+}
+
 export function enhanceUtils(utils: Partial<Utils>) {
 	return {
 		...utils,
@@ -141,5 +167,6 @@ export function enhanceUtils(utils: Partial<Utils>) {
 		Navigate: utils.Navigate && _Navigate(utils.Navigate),
 		useNavigate: utils.useNavigate && _useNavigate(utils.useNavigate),
 		Form: utils.Form && _Form(utils.Form),
+		useSubmit: utils.useSubmit && _useSubmit(utils.useSubmit),
 	};
 }

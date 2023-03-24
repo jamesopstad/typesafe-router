@@ -11,6 +11,8 @@ import type {
 	NavigateOptions,
 	FormMethod,
 	FormProps,
+	SubmitFunction,
+	SubmitOptions,
 } from 'react-router-dom';
 
 //#region Utils
@@ -473,26 +475,55 @@ interface NavigateFunction<TPaths extends string> {
 	(delta: number): void;
 }
 
-type _SubmitProps<
+type _SubmitOptions<
+	TMethod extends FormMethod,
+	TRouteDataFunction extends Loader | Action,
 	TPath extends string,
+	TBaseOptions,
 	TPathParams extends string = PathParams<TPath>
-> = [TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> };
+> = Omit<TBaseOptions, 'method' | 'action' | 'relative'> & {
+	method?: TMethod;
+} & ([TRouteDataFunction] extends [never]
+		? { action: TPath }
+		: { action?: TPath }) &
+	([TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> });
 
-type Form<TLoaderPaths extends string, TActionPaths extends string> = <
-	TPaths extends [TMethod] extends [never]
-		? TLoaderPaths
-		: TMethod extends 'get'
-		? TLoaderPaths
-		: TActionPaths,
+type Form<
+	TRouteDataFunctions extends RouteDataFunctions,
+	TDataFunctionPaths extends DataFunctionPaths
+> = <
 	TPath extends TPaths,
 	TMethod extends FormMethod = never,
-	TPathParams extends string = PathParams<TPath>
+	TRouteDataFunction extends Loader | Action = TRouteDataFunctions[[
+		TMethod
+	] extends ['get' | never]
+		? 'loader'
+		: 'action'],
+	TPaths extends string = [TMethod] extends ['get' | never]
+		? TDataFunctionPaths['loaders']
+		: TDataFunctionPaths['actions']
 >(
-	props: Omit<FormProps, 'method' | 'action' | 'relative'> & {
-		method?: TMethod;
-	} & (TPaths extends '' ? { action?: TPath } : { action: TPath }) &
-		([TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> })
+	props: _SubmitOptions<TMethod, TRouteDataFunction, TPath, FormProps>
 ) => ReturnType<Utils['Form']>;
+
+type _SubmitFunction<
+	TRouteDataFunctions extends RouteDataFunctions,
+	TDataFunctionPaths extends DataFunctionPaths
+> = <
+	TPath extends TPaths,
+	TMethod extends FormMethod = never,
+	TRouteDataFunction extends Loader | Action = TRouteDataFunctions[[
+		TMethod
+	] extends ['get' | never]
+		? 'loader'
+		: 'action'],
+	TPaths extends string = [TMethod] extends ['get' | never]
+		? TDataFunctionPaths['loaders']
+		: TDataFunctionPaths['actions']
+>(
+	target: Parameters<SubmitFunction>[0],
+	options?: _SubmitOptions<TMethod, TRouteDataFunction, TPath, SubmitOptions>
+) => void;
 
 type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
 
@@ -517,27 +548,38 @@ type UseRouteLoaderData<
 	| LoaderData<ExtractById<TConfig['loaders'], TId>>
 	| (TId extends TOptionalIds ? undefined : never);
 
+interface RouteDataFunctions {
+	loader: Loader;
+	action: Action;
+}
+
+type DataFunctionPaths = Record<'loaders' | 'actions', string>;
+
 interface ComponentUtils<
 	TConfig extends Config,
 	TRoute extends FlatRoute,
-	TLoader extends Loader = ExtractById<TConfig['loaders'], TRoute['id']>,
-	TAction extends Action = ExtractById<TConfig['actions'], TRoute['id']>,
+	TRouteDataFunctions extends RouteDataFunctions = {
+		loader: ExtractById<TConfig['loaders'], TRoute['id']>;
+		action: ExtractById<TConfig['actions'], TRoute['id']>;
+	},
 	TPaths extends string = Paths<TConfig['routes'], TRoute>,
-	TLoaderPaths extends string =
-		| (TLoader extends Loader ? '' : never)
-		| Paths<TConfig['routes'], TRoute, TConfig['loaders']['id']>,
-	TActionPaths extends string =
-		| (TAction extends Action ? '' : never)
-		| Paths<TConfig['routes'], TRoute, TConfig['actions']['id']>
+	TDataFunctionPaths extends DataFunctionPaths = {
+		[K in keyof DataFunctionPaths]: Paths<
+			TConfig['routes'],
+			TRoute,
+			TConfig[K]['id']
+		>;
+	}
 > {
 	Link: Link<TPaths>;
 	NavLink: NavLink<TPaths>;
 	Navigate: Navigate<TPaths>;
-	Form: Form<TLoaderPaths, TActionPaths>;
+	Form: Form<TRouteDataFunctions, TDataFunctionPaths>;
+	useSubmit: () => _SubmitFunction<TRouteDataFunctions, TDataFunctionPaths>;
 	useNavigate: () => NavigateFunction<TPaths>;
 	useParams: () => Params<TConfig['routes'], TRoute>;
-	useActionData: () => ActionData<TAction>;
-	useLoaderData: () => LoaderData<TLoader>;
+	useActionData: () => ActionData<TRouteDataFunctions['action']>;
+	useLoaderData: () => LoaderData<TRouteDataFunctions['loader']>;
 	useRouteLoaderData: UseRouteLoaderData<TConfig, TRoute>;
 }
 
