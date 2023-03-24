@@ -11,6 +11,7 @@ import type {
 	Loader,
 	Action,
 	Component,
+	ErrorBoundary,
 	Config,
 } from './types';
 import { enhanceUtils } from './utils';
@@ -65,6 +66,7 @@ export function finalize(
 		loaders: Record<string, any>;
 		actions: Record<string, any>;
 		components: Record<string, any>;
+		errorBoundaries: Record<string, any>;
 	}
 ) {
 	return routes.map((route): any => {
@@ -73,6 +75,7 @@ export function finalize(
 			loader: config.loaders[route.id],
 			action: config.actions[route.id],
 			Component: config.components[route.id],
+			ErrorBoundary: config.errorBoundaries[route.id],
 			children: route.children && finalize(route.children, config),
 		};
 	});
@@ -89,7 +92,7 @@ function toObject<TInput extends RouteProp<TSymbol>[], TSymbol extends symbol>(
 
 		if (acc[curr.id]) {
 			throw Error(
-				`Multiple ${symbol.description}s found for route '${curr.id}'`
+				`Multiple ${symbol.description} entries found for route '${curr.id}'`
 			);
 		}
 
@@ -101,25 +104,44 @@ function toObject<TInput extends RouteProp<TSymbol>[], TSymbol extends symbol>(
 	};
 }
 
-function configFn(
+function configFn<TOmit extends string = never>(
 	routes: Route[],
 	config: {
 		utils: {};
 		loaders: Record<string, any>;
 		actions: Record<string, any>;
 		components: Record<string, any>;
+		errorBoundaries: Record<string, any>;
 	}
 ) {
-	return {
+	const output = {
+		finalize() {
+			return finalize(routes, config);
+		},
 		addComponents<TComponents extends Component[]>(...components: TComponents) {
 			const componentsObject = toObject(components, symbols.component);
 
-			return finalize(routes, {
+			return configFn<TOmit | 'addComponents'>(routes, {
 				...config,
 				components: componentsObject,
 			});
 		},
+		addErrorBoundaries<TErrorBoundaries extends ErrorBoundary[]>(
+			...errorBoundaries: TErrorBoundaries
+		) {
+			const errorBoundariesObject = toObject(
+				errorBoundaries,
+				symbols.errorBoundary
+			);
+
+			return configFn<TOmit | 'addErrorBoundaries'>(routes, {
+				...config,
+				errorBoundaries: errorBoundariesObject,
+			});
+		},
 	};
+
+	return output as Omit<typeof output, TOmit>;
 }
 
 function initialConfigFn<TConfig extends Config, TOmit extends string = never>(
@@ -134,6 +156,7 @@ function initialConfigFn<TConfig extends Config, TOmit extends string = never>(
 		config: configFn(routes, {
 			...config,
 			components: {},
+			errorBoundaries: {},
 		}),
 		createComponent<TId extends TConfig['routes']['id']>(
 			id: TId,
@@ -145,6 +168,16 @@ function initialConfigFn<TConfig extends Config, TOmit extends string = never>(
 				type: symbols.component,
 				id,
 				value: component(config.utils as any),
+			} as const;
+		},
+		createErrorBoundary<TId extends TConfig['routes']['id']>(
+			id: TId,
+			errorBoundary: () => React.ComponentType | null
+		) {
+			return {
+				type: symbols.errorBoundary,
+				id,
+				value: errorBoundary(),
 			} as const;
 		},
 		addLoaders<TLoaders extends Loader[]>(...loaders: TLoaders) {

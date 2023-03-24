@@ -414,6 +414,7 @@ export interface RouteProp<TType extends symbol> {
 export type Loader = RouteProp<typeof symbols.loader>;
 export type Action = RouteProp<typeof symbols.action>;
 export type Component = RouteProp<typeof symbols.component>;
+export type ErrorBoundary = RouteProp<typeof symbols.errorBoundary>;
 
 export interface Config {
 	routes: FlatRoute;
