@@ -20,6 +20,7 @@ import type {
 	ActionFunctionArgs,
 	LoaderFunction,
 	LoaderFunctionArgs,
+	RouteObject,
 } from 'react-router-dom';
 
 export function normalizePath(route: RouteInput) {
@@ -60,16 +61,17 @@ export function transformRoutes(
 	});
 }
 
-export function finalize(
-	routes: readonly Route[],
-	config: {
-		loaders: Record<string, any>;
-		actions: Record<string, any>;
-		components: Record<string, any>;
-		errorBoundaries: Record<string, any>;
-	}
-) {
-	return routes.map((route): any => {
+type RequiredRecord<T> = Record<string, Required<T>>;
+
+interface FinalConfig {
+	loaders: RequiredRecord<RouteObject['action']>;
+	actions: RequiredRecord<RouteObject['action']>;
+	components: RequiredRecord<RouteObject['Component']>;
+	errorBoundaries: RequiredRecord<RouteObject['ErrorBoundary']>;
+}
+
+export function finalize(routes: readonly Route[], config: FinalConfig) {
+	return routes.map((route): unknown => {
 		return {
 			...route,
 			loader: config.loaders[route.id],
@@ -78,7 +80,7 @@ export function finalize(
 			ErrorBoundary: config.errorBoundaries[route.id],
 			children: route.children && finalize(route.children, config),
 		};
-	});
+	}) as RouteObject[];
 }
 
 function toObject<TInput extends RouteProp<TSymbol>[], TSymbol extends symbol>(
@@ -106,13 +108,7 @@ function toObject<TInput extends RouteProp<TSymbol>[], TSymbol extends symbol>(
 
 function configFn<TOmit extends string = never>(
 	routes: Route[],
-	config: {
-		utils: {};
-		loaders: Record<string, any>;
-		actions: Record<string, any>;
-		components: Record<string, any>;
-		errorBoundaries: Record<string, any>;
-	}
+	config: FinalConfig
 ) {
 	const output = {
 		finalize() {
