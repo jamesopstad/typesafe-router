@@ -1,5 +1,5 @@
+import { normalizePath, setIdSegment, normalizeRoutes } from './main';
 import { describe, it, expect } from 'vitest';
-import { normalizePath, setIdSegment, setId, transformRoutes } from './main';
 
 describe('normalizePath', () => {
 	it('removes leading slashes', () => {
@@ -32,7 +32,7 @@ describe('setIdSegment', () => {
 });
 
 describe('transformRoutes', () => {
-	const transformedRoutes = transformRoutes([
+	const transformedRoutes = normalizeRoutes([
 		{
 			path: '/',
 			children: [

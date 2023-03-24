@@ -1,7 +1,7 @@
 import type {
 	NormalizePath,
 	SetIdSegment,
-	TransformRoutes,
+	NormalizeRoutes,
 	SetParams,
 	ConvertOptionalPathSegments,
 	FlattenRoutes,
@@ -93,11 +93,11 @@ describe('SetIdSegment', () => {
 	});
 });
 
-describe('TransformRoutes', () => {
-	type TransformedRoutes = TransformRoutes<TestRoutes>;
+describe('NormalizeRoutes', () => {
+	type NormalizedRoutes = NormalizeRoutes<TestRoutes>;
 
 	it('correctly transforms paths and ids', () => {
-		expectTypeOf<TransformedRoutes>().toEqualTypeOf<
+		expectTypeOf<NormalizedRoutes>().toEqualTypeOf<
 			[
 				{
 					id: '/';
@@ -299,8 +299,8 @@ describe('ConvertOptionalPathSegments', () => {
 });
 
 describe('Paths', () => {
-	type TransformedRoutes = TransformRoutes<TestRoutes>;
-	type Routes = FlattenRoutes<TransformedRoutes>;
+	type NormalizedRoutes = NormalizeRoutes<TestRoutes>;
+	type Routes = FlattenRoutes<NormalizedRoutes>;
 	type AbsolutePathsResult = AbsolutePaths<Routes>;
 
 	it('returns the correct descendant paths', () => {
@@ -429,7 +429,7 @@ describe('PathParams', () => {
 });
 
 describe('Params', () => {
-	type TransformedRoutes = TransformRoutes<TestRoutes>;
+	type TransformedRoutes = NormalizeRoutes<TestRoutes>;
 	type Routes = FlattenRoutes<TransformedRoutes>;
 
 	it('returns the correct current params', () => {

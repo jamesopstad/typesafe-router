@@ -1,7 +1,7 @@
 import * as symbols from './symbols';
 import type {
 	RouteInput,
-	TransformRoutes,
+	NormalizeRoutes,
 	Route,
 	FlattenRoutes,
 	LoaderWrapperArgs,
@@ -47,7 +47,7 @@ export function setId(route: RouteInput, parentRoute?: RouteInput) {
 	};
 }
 
-export function transformRoutes(
+export function normalizeRoutes(
 	routes: readonly RouteInput[],
 	parentRoute?: RouteInput
 ) {
@@ -56,16 +56,20 @@ export function transformRoutes(
 
 		return {
 			...route,
-			children: route.children && transformRoutes(route.children, route),
+			children: route.children && normalizeRoutes(route.children, route),
 		};
 	});
 }
 
 type RequiredRecord<T> = Record<string, Required<T>>;
 
-interface FinalConfig {
-	loaders: RequiredRecord<RouteObject['action']>;
+interface InitialConfig {
+	loaders: RequiredRecord<RouteObject['loader']>;
 	actions: RequiredRecord<RouteObject['action']>;
+	utils: {};
+}
+
+interface FinalConfig extends InitialConfig {
 	components: RequiredRecord<RouteObject['Component']>;
 	errorBoundaries: RequiredRecord<RouteObject['ErrorBoundary']>;
 }
@@ -142,11 +146,7 @@ function configFn<TOmit extends string = never>(
 
 function initialConfigFn<TConfig extends Config, TOmit extends string = never>(
 	routes: Route[],
-	config: {
-		utils: {};
-		loaders: {};
-		actions: {};
-	}
+	config: InitialConfig
 ) {
 	const output = {
 		config: configFn(routes, {
@@ -209,7 +209,7 @@ export function createRoutes<
 >(routes: TRoutes, utils: TUtils) {
 	interface TConfig {
 		routes: Extract<
-			FlattenRoutes<TransformRoutes<TRoutes>>,
+			FlattenRoutes<NormalizeRoutes<TRoutes>>,
 			{ id: string; params: {} }
 		>;
 		utils: TUtils;
@@ -244,10 +244,66 @@ export function createRoutes<
 				},
 			} as const;
 		},
-		initialConfig: initialConfigFn<TConfig>(transformRoutes(routes), {
+		initialConfig: initialConfigFn<TConfig>(normalizeRoutes(routes), {
 			utils: enhancedUtils,
 			loaders: {},
 			actions: {},
 		}),
 	};
 }
+
+// export function initRouter<TUtils extends Config['utils']>(utils: TUtils) {
+// 	const enhancedUtils = enhanceUtils(utils);
+
+// 	return {
+// 		addRoutes<TRoutes extends readonly RouteInput[]>(routes: TRoutes) {
+// 			interface TConfig {
+// 				routes: Extract<
+// 					FlattenRoutes<TransformRoutes<TRoutes>>,
+// 					{ id: string; params: {} }
+// 				>;
+// 				utils: TUtils;
+// 				loaders: never;
+// 				actions: never;
+// 			}
+
+// 			return {
+// 				createLoader<
+// 					TId extends TConfig['routes']['id'],
+// 					TReturn extends ReturnType<LoaderFunction>
+// 				>(id: TId, loader: (args: LoaderWrapperArgs<TConfig, TId>) => TReturn) {
+// 					return {
+// 						type: symbols.loader,
+// 						id,
+// 						value(args: LoaderFunctionArgs) {
+// 							return loader({
+// 								...args,
+// 								redirect: enhancedUtils.redirect,
+// 							} as any);
+// 						},
+// 					} as const;
+// 				},
+// 				createAction<
+// 					TId extends TConfig['routes']['id'],
+// 					TReturn extends ReturnType<ActionFunction>
+// 				>(id: TId, action: (args: ActionWrapperArgs<TConfig, TId>) => TReturn) {
+// 					return {
+// 						type: symbols.action,
+// 						id,
+// 						value(args: ActionFunctionArgs) {
+// 							return action({
+// 								...args,
+// 								redirect: enhancedUtils.redirect,
+// 							} as any);
+// 						},
+// 					} as const;
+// 				},
+// 				initialConfig: initialConfigFn<TConfig>(transformRoutes(routes), {
+// 					utils: enhancedUtils,
+// 					loaders: {},
+// 					actions: {},
+// 				}),
+// 			};
+// 		},
+// 	};
+// }

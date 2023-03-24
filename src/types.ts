@@ -85,16 +85,16 @@ type SetId<
 					: ''}/${SetIdSegment<TRoute>}`;
 		  });
 
-type _TransformRoutes<TRoute extends RouteInput> = Omit<TRoute, 'children'> &
+type _NormalizeRoutes<TRoute extends RouteInput> = Omit<TRoute, 'children'> &
 	(TRoute extends { children: infer TChildren extends readonly RouteInput[] }
-		? { readonly children: TransformRoutes<TChildren, TRoute> }
+		? { readonly children: NormalizeRoutes<TChildren, TRoute> }
 		: {});
 
-export type TransformRoutes<
+export type NormalizeRoutes<
 	TRoutes extends readonly RouteInput[],
 	TParentRoute extends RouteInput = {}
 > = {
-	[K in keyof TRoutes]: _TransformRoutes<
+	[K in keyof TRoutes]: _NormalizeRoutes<
 		SetId<NormalizePath<TRoutes[K]>, TParentRoute>
 	>;
 };
