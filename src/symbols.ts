@@ -1,4 +1,5 @@
-export const loader = Symbol('loader');
 export const action = Symbol('action');
-export const component = Symbol('component');
-export const errorBoundary = Symbol('error boundary');
+export const loader = Symbol('loader');
+export const Component = Symbol('component');
+export const ErrorBoundary = Symbol('error boundary');
+export const lazy = Symbol('lazy');

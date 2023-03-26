@@ -1,9 +1,10 @@
 import * as symbols from './symbols';
 import type { Utils } from './utils';
+import type { ActionWrapper, LoaderWrapper, LazyOrStatic } from './wrappers';
 import type {
 	RedirectFunction,
-	LoaderFunctionArgs,
-	ActionFunctionArgs,
+	ActionFunctionArgs as _ActionFunctionArgs,
+	LoaderFunctionArgs as _LoaderFunctionArgs,
 	URLSearchParamsInit,
 	LinkProps,
 	NavLinkProps,
@@ -405,22 +406,32 @@ type LinkParams<
 
 //#region Config
 
-export interface RouteProp<TType extends symbol> {
-	type: TType;
-	id: string;
-	value: any;
-}
+// export interface RouteProp<TType extends symbol, TId extends string = string> {
+// 	type: TType;
+// 	id: TId;
+// 	value: any;
+// }
 
-export type Loader = RouteProp<typeof symbols.loader>;
-export type Action = RouteProp<typeof symbols.action>;
-export type Component = RouteProp<typeof symbols.component>;
-export type ErrorBoundary = RouteProp<typeof symbols.errorBoundary>;
+// export type Loader<TId extends string = string> = RouteProp<
+// 	typeof symbols.loader,
+// 	TId
+// >;
+// export type Action = RouteProp<typeof symbols.action>;
+// export type Component = RouteProp<typeof symbols.component>;
+// export type ErrorBoundary = RouteProp<typeof symbols.errorBoundary>;
+
+// export interface Config {
+// 	routes: FlatRoute;
+// 	utils: Partial<Utils>;
+// 	actions: LazyOrStatic<'action'>;
+// 	loaders: LazyOrStatic<'loader'>;
+// }
 
 export interface Config {
 	routes: FlatRoute;
 	utils: Partial<Utils>;
-	loaders: Loader;
-	actions: Action;
+	actions: ActionWrapper;
+	loaders: LoaderWrapper;
 }
 
 //#endregion
@@ -439,19 +450,19 @@ interface DataFunctionUtils<
 	redirect: Redirect<TPaths>;
 }
 
-export type LoaderWrapperArgs<
+export type LoaderFunctionArgs<
 	TConfig extends Config,
-	TId extends string = string,
+	TId extends string,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
-> = Omit<LoaderFunctionArgs, 'params'> & {
+> = Omit<_LoaderFunctionArgs, 'params'> & {
 	params: Params<TConfig['routes'], TRoute>;
 } & ExtractUtils<DataFunctionUtils<TConfig, TRoute>, TConfig['utils']>;
 
-export type ActionWrapperArgs<
+export type ActionFunctionArgs<
 	TConfig extends Config,
-	TId extends string = string,
+	TId extends string,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
-> = Omit<ActionFunctionArgs, 'params'> & {
+> = Omit<_ActionFunctionArgs, 'params'> & {
 	params: Params<TConfig['routes'], TRoute>;
 } & ExtractUtils<DataFunctionUtils<TConfig, TRoute>, TConfig['utils']>;
 
@@ -479,7 +490,7 @@ interface NavigateFunction<TPaths extends string> {
 type _SubmitOptions<
 	TMethod extends FormMethod,
 	TPath extends string,
-	TAction extends Action,
+	TAction extends ActionWrapper,
 	TBaseOptions,
 	TPathParams extends string = PathParams<TPath>
 > = Omit<TBaseOptions, 'method' | 'action' | 'relative'> & {
@@ -494,7 +505,7 @@ type _SubmitOptions<
 type Form<
 	TGetPaths extends string,
 	TActionPaths extends string,
-	TAction extends Action
+	TAction extends ActionWrapper
 > = <
 	TPaths extends [TMethod] extends ['get' | never] ? TGetPaths : TActionPaths,
 	TPath extends TPaths = never,
@@ -506,7 +517,7 @@ type Form<
 type _SubmitFunction<
 	TGetPaths extends string,
 	TActionPaths extends string,
-	TAction extends Action
+	TAction extends ActionWrapper
 > = <
 	TPaths extends [TMethod] extends ['get' | never] ? TGetPaths : TActionPaths,
 	TPath extends TPaths = never,
@@ -516,10 +527,14 @@ type _SubmitFunction<
 	options?: _SubmitOptions<TMethod, TPath, TAction, SubmitOptions>
 ) => void;
 
-type ActionData<TAction extends Action> = Awaited<ReturnType<TAction['value']>>;
+type ActionData<TActionWrapper extends ActionWrapper> = Awaited<
+	ReturnType<TActionWrapper['value']>
+>;
 
 // ADD SUPPORT FOR DEFER ETC.
-type LoaderData<TLoader extends Loader> = Awaited<ReturnType<TLoader['value']>>;
+type LoaderData<TLoaderWrapper extends LoaderWrapper> = Awaited<
+	ReturnType<TLoaderWrapper['value']>
+>;
 
 type UseRouteLoaderData<
 	TConfig extends Config,
@@ -542,8 +557,8 @@ type UseRouteLoaderData<
 interface ComponentUtils<
 	TConfig extends Config,
 	TRoute extends FlatRoute,
-	TAction extends Action = ExtractById<TConfig['actions'], TRoute['id']>,
-	TLoader extends Loader = ExtractById<TConfig['loaders'], TRoute['id']>,
+	TAction extends ActionWrapper = ExtractById<TConfig['actions'], TRoute['id']>,
+	TLoader extends LoaderWrapper = ExtractById<TConfig['loaders'], TRoute['id']>,
 	TPaths extends string = Paths<TConfig['routes'], TRoute>,
 	TActionPaths extends string = Paths<
 		TConfig['routes'],
@@ -563,9 +578,9 @@ interface ComponentUtils<
 	useRouteLoaderData: UseRouteLoaderData<TConfig, TRoute>;
 }
 
-export type ComponentWrapperArgs<
-	TConfig extends Config = Config,
-	TId extends string = string,
+export type ComponentFunctionArgs<
+	TConfig extends Config,
+	TId extends string,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
 > = ExtractUtils<ComponentUtils<TConfig, TRoute>, TConfig['utils']>;
 
