@@ -1,5 +1,15 @@
 import * as symbols from './symbols';
-import type { ActionFunction, LoaderFunction } from 'react-router-dom';
+import type * as $ from 'react-router-dom';
+
+export type ActionFunction = (
+	args: $.ActionFunctionArgs & { redirect?: $.RedirectFunction }
+) => ReturnType<$.ActionFunction>;
+
+export type LoaderFunction = (
+	args: $.LoaderFunctionArgs & { redirect?: $.RedirectFunction }
+) => ReturnType<$.ActionFunction>;
+
+export type ComponentType = React.ComponentType | null;
 
 export interface Wrapper<
 	TId extends string = string,
@@ -26,13 +36,13 @@ export type LoaderWrapper<TId extends string = string> = Wrapper<
 export type ComponentWrapper<TId extends string = string> = Wrapper<
 	TId,
 	typeof symbols.Component,
-	React.ComponentType | null
+	ComponentType
 >;
 
 export type ErrorBoundaryWrapper<TId extends string = string> = Wrapper<
 	TId,
 	typeof symbols.ErrorBoundary,
-	React.ComponentType | null
+	ComponentType
 >;
 
 export type LazyValue<
@@ -48,7 +58,7 @@ export type LazyWrapper<TId extends string, TValue extends LazyValue> = Wrapper<
 
 export type RouteProps = 'action' | 'loader' | 'Component' | 'ErrorBoundary';
 
-export type LazyOrStatic<
+export type EagerOrLazy<
 	TProp extends RouteProps = RouteProps,
 	TId extends string = string,
 	TValue extends Wrapper<TId> = {
@@ -59,14 +69,14 @@ export type LazyOrStatic<
 	}[TProp]
 > = TValue | LazyWrapper<TId, LazyValue<TProp, TValue>>;
 
-export type UnwrapLazyOrStatic<
-	TLazyOrStatic extends Wrapper,
+export type UnwrapEagerOrLazy<
+	TEagerOrLazy extends Wrapper,
 	TWrapper extends Wrapper
-> = TLazyOrStatic extends LazyWrapper<
+> = TEagerOrLazy extends LazyWrapper<
 	string,
 	LazyValue<string, infer T extends TWrapper>
 >
 	? T
-	: TLazyOrStatic extends TWrapper
-	? TLazyOrStatic
+	: TEagerOrLazy extends TWrapper
+	? TEagerOrLazy
 	: never;

@@ -1,1 +1,6 @@
-export { createRoutes } from './main';
+export {
+	createRouteConfig,
+	initDataCreators,
+	initRenderCreators,
+	lazy,
+} from './main';
