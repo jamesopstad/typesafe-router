@@ -254,30 +254,47 @@ interface FinalConfig extends InitialConfig {
 }
 
 function toRoutes(routes: readonly Route[], config: FinalConfig) {
+	const map = {
+		action: config.actions,
+		loader: config.loaders,
+		Component: config.components,
+		ErrorBoundary: config.errorBoundaries,
+	} as const;
+
 	return routes.map((route): unknown => {
 		const eager: Partial<Record<RouteProps, unknown>> = {};
 		const lazy: Partial<Record<RouteProps, LazyValue>> = {};
 
-		const Component = config.components[route.id];
-		if (Component) {
-			if (Component.type === symbols.lazy) {
-				lazy.Component = Component.value;
+		for (const prop of [
+			'action',
+			'loader',
+			'Component',
+			'ErrorBoundary',
+		] as const) {
+			const item = map[prop][route.id];
+
+			if (!item) continue;
+
+			if (item.type === symbols.lazy) {
+				lazy[prop] = item.value;
 			} else {
-				eager.Component = Component.value;
+				eager[prop] = item.value;
 			}
 		}
 
 		return {
 			...route,
-			Component: eager.Component,
+			...eager,
 			async lazy() {
-				if (lazy.Component) {
-					const { Component } = await lazy.Component();
+				const modules = await Promise.all(
+					Object.values(lazy).map((value) => value())
+				);
 
-					return {
-						Component: Component?.value,
-					};
-				}
+				return Object.keys(lazy).reduce((acc, curr, i) => {
+					acc[curr] = modules[i]![curr]?.value;
+
+					return acc;
+				}, {} as any);
 			},
 			children: route.children && toRoutes(route.children, config),
 		};
