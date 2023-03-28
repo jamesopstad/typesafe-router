@@ -6,6 +6,7 @@ module.exports = {
 			files: '*.md',
 			options: {
 				useTabs: false,
+				plugins: [],
 			},
 		},
 	],

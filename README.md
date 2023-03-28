@@ -6,9 +6,11 @@ A wrapper library for [React Router](https://reactrouter.com/) that dramatically
 
 ### Features
 
+- Static type safety and autocompletion
 - Builder API
-- Tiny footprint and 0 dependencies
-- Lazy loading
+- Zero dependencies and tiny footprint
+- No code generation
+- Supports lazy loading
 
 ## Installation
 
@@ -16,7 +18,7 @@ A wrapper library for [React Router](https://reactrouter.com/) that dramatically
 npm install typesafe-router
 ```
 
-## Tutorial
+## Documentation
 
 Typesafe Router splits your route definitions into 3 sections:
 
@@ -24,7 +26,11 @@ Typesafe Router splits your route definitions into 3 sections:
 - Data loading/submitting fields such as `loader` and `action`
 - Rendering fields such as `Component` and `ErrorBoundary`
 
-Each of these categories can then infer the types that have already been defined.
+This approach unlocks great benefits, both in terms of type safety and lazy-loading.
+
+(These definitions borrow from Matt Brophy's excellent blogpost on the new React Router lazy-loading features).
+
+Let's get started!
 
 ### Create the route config, using just the path matching fields, and then export the type
 
@@ -53,9 +59,9 @@ export type RouteConfig = typeof routeConfig;
 
 ```ts
 // utils.ts
-import type { RouteConfig } from './routes';
 import { redirect } from 'react-router-dom';
 import { initDataCreators } from 'typesafe-router';
+import type { RouteConfig } from './routes';
 
 export const { createAction, createLoader } =
   initDataCreators<RouteConfig>().addUtils({ redirect });
@@ -65,7 +71,6 @@ export const { createAction, createLoader } =
 
 ```ts
 // exampleRoute.tsx
-
 import { createAction, createLoader } from './utils'
 
 export const exampleAction = createAction('/', ({ params, redirect }) => {
@@ -83,7 +88,6 @@ export const exampleLoader = createLoader('/', ({ params, redirect }) => {
 
 ```ts
 // routes.ts
-
 /* existing imports */
 import { exampleAction, exampleLoader } from './exampleRoute';
 
@@ -100,16 +104,15 @@ export type DataConfig = typeof dataConfig;
 
 ```ts
 // utils.ts
-
 /* existing imports */
-import type { DataConfig } from './routes';
+import { initDataCreators } from 'typesafe-router';
 import {
   useActionData,
   useLoaderData,
   useParams,
   Link,
 } from 'react-router-dom';
-import { initDataCreators } from 'typesafe-router';
+import type { DataConfig } from './routes';
 
 /* existing code */
 
@@ -156,7 +159,6 @@ export const exampleErrorBoundary = createErrorBoundary('/', () => () => {
 
 ```ts
 // routes.ts
-
 /* existing imports */
 import { exampleComponent, exampleErrorBoundary } from './exampleRoute';
 
@@ -223,14 +225,14 @@ The params are inferred. The type is the union of all the possible combinations 
 
 The return type is inferred from the loader function with the given ID. IDs are restricted to routes that have loaders and could be rendered at the same time as the current route. If the loader is lower in the route hierarchy then the return type is a union with undefined.
 
-### <Link>
+### Link
 
 The path is inferred (see note above)
 
-### <Navigate>
+### Navigate
 
 The path is inferred (see note above)
 
-### <NavLink>
+### NavLink
 
 The path is inferred (see note above)
