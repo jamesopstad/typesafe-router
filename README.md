@@ -69,15 +69,15 @@ export const { createAction, createLoader } =
 
 ```ts
 // exampleRoute.tsx
-import { createAction, createLoader } from './utils'
+import { createAction, createLoader } from './utils';
 
 export const exampleAction = createAction('/', ({ params, redirect }) => {
-  return 'a string'
-}
+  return 'a string';
+});
 
 export const exampleLoader = createLoader('/', ({ params, redirect }) => {
-  return 123
-})
+  return 123;
+});
 ```
 
 > **NOTE:** The first argument is the route ID. Route IDs are automatically generated from your paths, with '\_' segments added for pathless routes and '\_index' segments added for index routes. You can also provide your own IDs in the route config if you prefer.
