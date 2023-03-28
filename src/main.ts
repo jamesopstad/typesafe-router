@@ -17,8 +17,6 @@ import type {
 	Wrapper,
 	ActionWrapper,
 	LoaderWrapper,
-	ComponentWrapper,
-	ErrorBoundaryWrapper,
 	LazyValue,
 	RouteProps,
 	EagerOrLazy,

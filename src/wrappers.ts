@@ -1,14 +1,6 @@
 import * as symbols from './symbols';
 import type * as $ from 'react-router-dom';
 
-export type ActionFunction = (
-	args: $.ActionFunctionArgs & { redirect?: $.RedirectFunction }
-) => ReturnType<$.ActionFunction>;
-
-export type LoaderFunction = (
-	args: $.LoaderFunctionArgs & { redirect?: $.RedirectFunction }
-) => ReturnType<$.ActionFunction>;
-
 export type ComponentType = React.ComponentType | null;
 
 export interface Wrapper<
@@ -24,13 +16,13 @@ export interface Wrapper<
 export type ActionWrapper<TId extends string = string> = Wrapper<
 	TId,
 	typeof symbols.action,
-	ActionFunction
+	(args: $.ActionFunctionArgs) => unknown
 >;
 
 export type LoaderWrapper<TId extends string = string> = Wrapper<
 	TId,
 	typeof symbols.loader,
-	LoaderFunction
+	(args: $.LoaderFunction) => unknown
 >;
 
 export type ComponentWrapper<TId extends string = string> = Wrapper<
