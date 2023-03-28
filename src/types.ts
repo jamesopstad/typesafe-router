@@ -497,16 +497,16 @@ interface RenderUtils<
 	TAction extends ActionWrapper = ExtractById<TConfig['actions'], TRoute['id']>,
 	TLoader extends LoaderWrapper = ExtractById<TConfig['loaders'], TRoute['id']>
 > {
-	Form: Form<TPaths, TAction>;
-	Link: Link<TPaths>;
-	Navigate: Navigate<TPaths>;
-	NavLink: NavLink<TPaths>;
 	useActionData: () => ActionData<TAction> | undefined;
 	useLoaderData: () => LoaderData<TLoader>;
 	useNavigate: () => NavigateFunction<TPaths>;
 	useParams: () => Params<TConfig['routes'], TRoute>;
 	useRouteLoaderData: UseRouteLoaderData<TConfig, TRoute>;
 	useSubmit: () => SubmitFunction<TPaths, TAction>;
+	Form: Form<TPaths, TAction>;
+	Link: Link<TPaths>;
+	Navigate: Navigate<TPaths>;
+	NavLink: NavLink<TPaths>;
 }
 
 export type ComponentFunctionArgs<

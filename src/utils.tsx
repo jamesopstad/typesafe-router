@@ -7,16 +7,16 @@ export interface InputDataUtils {
 }
 
 export interface InputRenderUtils {
+	useActionData: typeof $.useActionData;
+	useLoaderData: typeof $.useLoaderData;
+	useNavigate: typeof $.useNavigate;
+	useParams: typeof $.useParams;
+	useRouteLoaderData: typeof $.useRouteLoaderData;
+	useSubmit: typeof $.useSubmit;
+	Form: typeof $.Form;
 	Link: typeof $.Link;
 	NavLink: typeof $.NavLink;
 	Navigate: typeof $.Navigate;
-	Form: typeof $.Form;
-	useSubmit: typeof $.useSubmit;
-	useNavigate: typeof $.useNavigate;
-	useParams: typeof $.useParams;
-	useActionData: typeof $.useActionData;
-	useLoaderData: typeof $.useLoaderData;
-	useRouteLoaderData: typeof $.useRouteLoaderData;
 }
 
 interface PathOptions {
