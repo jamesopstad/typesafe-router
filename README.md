@@ -28,9 +28,7 @@ Typesafe Router splits your route definitions into 3 sections:
 
 This approach unlocks great benefits, both in terms of type safety and lazy-loading.
 
-(These definitions borrow from Matt Brophy's excellent blogpost on the new React Router lazy-loading features).
-
-Let's get started!
+> These definitions borrow from Matt Brophy's excellent blogpost on the new React Router lazy-loading features.
 
 ### Create the route config, using just the path matching fields, and then export the type
 
@@ -55,7 +53,7 @@ const routeConfig = createRouteConfig([
 export type RouteConfig = typeof routeConfig;
 ```
 
-### Initialise the data creator functions and provide any React Router utils you intend to use
+### Initialise the data creator functions and provide any React Router utils you need
 
 ```ts
 // utils.ts
@@ -74,11 +72,11 @@ export const { createAction, createLoader } =
 import { createAction, createLoader } from './utils'
 
 export const exampleAction = createAction('/', ({ params, redirect }) => {
-	return 'a string'
+  return 'a string'
 }
 
 export const exampleLoader = createLoader('/', ({ params, redirect }) => {
-	return 123
+  return 123
 })
 ```
 
@@ -149,9 +147,9 @@ export const exampleComponent = createComponent(
 );
 
 export const exampleErrorBoundary = createErrorBoundary('/', () => () => {
-	return {
-		<p>Error text</p>
-	}
+  return {
+    <p>Error text</p>
+    }
 })
 ```
 
