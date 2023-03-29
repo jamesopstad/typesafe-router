@@ -28,7 +28,7 @@ Typesafe Router splits your route definitions into 3 sections:
 
 This approach unlocks great benefits, both in terms of type safety and lazy-loading.
 
-> These definitions borrow from Matt Brophy's excellent blogpost on the new React Router lazy-loading features.
+> These definitions borrow from Matt Brophy's excellent blogpost on the new React Router lazy-loading features (https://remix.run/blog/lazy-loading-routes)
 
 ### Create the route config, using just the path matching fields, and then export the type
 

@@ -1,4 +1,5 @@
 import type { ParamsObject } from './types';
+import { forwardRef } from 'react';
 import { generatePath, createSearchParams } from 'react-router-dom';
 import type * as $ from 'react-router-dom';
 
@@ -15,8 +16,8 @@ export interface InputRenderUtils {
 	useSubmit: typeof $.useSubmit;
 	Form: typeof $.Form;
 	Link: typeof $.Link;
-	NavLink: typeof $.NavLink;
 	Navigate: typeof $.Navigate;
+	NavLink: typeof $.NavLink;
 }
 
 interface PathOptions {
@@ -31,9 +32,9 @@ function createPath(to: string, options: PathOptions) {
 	}${options.hash ? `#${options.hash}` : ''}`;
 }
 
-function redirect(original: InputDataUtils['redirect']) {
+function createRedirect(original: InputDataUtils['redirect']) {
 	return (
-		to: string,
+		to = '',
 		options?: { init?: Parameters<InputDataUtils['redirect']>[1] } & PathOptions
 	) => {
 		if (!options) {
@@ -44,56 +45,11 @@ function redirect(original: InputDataUtils['redirect']) {
 	};
 }
 
-function Link(Original: InputRenderUtils['Link']) {
-	return ({
-		to,
-		params,
-		searchParams,
-		hash,
-		relative,
-		...rest
-	}: Omit<$.LinkProps, 'to'> & {
-		to: string;
-	} & PathOptions) => (
-		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
-	);
-}
-
-function NavLink(Original: InputRenderUtils['NavLink']) {
-	return ({
-		to,
-		params,
-		searchParams,
-		hash,
-		relative,
-		...rest
-	}: Omit<$.NavLinkProps, 'to'> & {
-		to: string;
-	} & PathOptions) => (
-		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
-	);
-}
-
-function Navigate(Original: InputRenderUtils['Navigate']) {
-	return ({
-		to,
-		params,
-		searchParams,
-		hash,
-		relative,
-		...rest
-	}: Omit<$.NavigateProps, 'to'> & {
-		to: string;
-	} & PathOptions) => (
-		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
-	);
-}
-
-function useNavigate(original: InputRenderUtils['useNavigate']) {
+function createUseNavigate(original: InputRenderUtils['useNavigate']) {
 	return () => {
 		const navigate = original();
 
-		return (to: string, options?: $.NavigateOptions & PathOptions) => {
+		return (to = '', options?: $.NavigateOptions & PathOptions) => {
 			if (!options) {
 				return navigate(to);
 			}
@@ -105,18 +61,7 @@ function useNavigate(original: InputRenderUtils['useNavigate']) {
 	};
 }
 
-function Form(Original: InputRenderUtils['Form']) {
-	return ({
-		action = '',
-		params,
-		relative,
-		...rest
-	}: $.FormProps & { params?: ParamsObject }) => (
-		<Original {...rest} action={createPath(action, { params })} />
-	);
-}
-
-function useSubmit(original: InputRenderUtils['useSubmit']) {
+function createUseSubmit(original: InputRenderUtils['useSubmit']) {
 	return () => {
 		const submit = original();
 
@@ -138,21 +83,94 @@ function useSubmit(original: InputRenderUtils['useSubmit']) {
 	};
 }
 
+function createForm(Original: InputRenderUtils['Form']) {
+	return forwardRef<HTMLFormElement, $.FormProps & { params?: ParamsObject }>(
+		function Form({ action = '', params, relative, ...rest }, ref) {
+			return (
+				<Original {...rest} action={createPath(action, { params })} ref={ref} />
+			);
+		}
+	);
+}
+
+// function Form(Original: InputRenderUtils['Form']) {
+// 	return ({
+// 		action = '',
+// 		params,
+// 		relative,
+// 		...rest
+// 	}: $.FormProps & { params?: ParamsObject }) => (
+// 		<Original {...rest} action={createPath(action, { params })} />
+// 	);
+// }
+
+function createLink(Original: InputRenderUtils['Link']) {
+	return forwardRef<
+		HTMLAnchorElement,
+		Omit<$.LinkProps, 'to'> & { to?: string } & PathOptions
+	>(function Link(
+		{ to = '', params, searchParams, hash, relative, ...rest },
+		ref
+	) {
+		return (
+			<Original
+				{...rest}
+				to={createPath(to, { params, searchParams, hash })}
+				ref={ref}
+			/>
+		);
+	});
+}
+
+function createNavigate(Original: InputRenderUtils['Navigate']) {
+	return ({
+		to = '',
+		params,
+		searchParams,
+		hash,
+		relative,
+		...rest
+	}: Omit<$.NavigateProps, 'to'> & {
+		to?: string;
+	} & PathOptions) => (
+		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
+	);
+}
+
+function createNavLink(Original: InputRenderUtils['NavLink']) {
+	return forwardRef<
+		HTMLAnchorElement,
+		Omit<$.NavLinkProps, 'to'> & { to?: string } & PathOptions
+	>(function Link(
+		{ to = '', params, searchParams, hash, relative, ...rest },
+		ref
+	) {
+		return (
+			<Original
+				{...rest}
+				to={createPath(to, { params, searchParams, hash })}
+				ref={ref}
+			/>
+		);
+	});
+}
+
 export function enhanceDataUtils(inputUtils: Partial<InputDataUtils>) {
 	return {
 		...inputUtils,
-		redirect: inputUtils.redirect && redirect(inputUtils.redirect),
+		redirect: inputUtils.redirect && createRedirect(inputUtils.redirect),
 	};
 }
 
 export function enhanceRenderUtils(inputUtils: Partial<InputRenderUtils>) {
 	return {
 		...inputUtils,
-		Link: inputUtils.Link && Link(inputUtils.Link),
-		NavLink: inputUtils.NavLink && NavLink(inputUtils.NavLink),
-		Navigate: inputUtils.Navigate && Navigate(inputUtils.Navigate),
-		useNavigate: inputUtils.useNavigate && useNavigate(inputUtils.useNavigate),
-		Form: inputUtils.Form && Form(inputUtils.Form),
-		useSubmit: inputUtils.useSubmit && useSubmit(inputUtils.useSubmit),
+		useNavigate:
+			inputUtils.useNavigate && createUseNavigate(inputUtils.useNavigate),
+		useSubmit: inputUtils.useSubmit && createUseSubmit(inputUtils.useSubmit),
+		Form: inputUtils.Form && createForm(inputUtils.Form),
+		Link: inputUtils.Link && createLink(inputUtils.Link),
+		Navigate: inputUtils.Navigate && createNavigate(inputUtils.Navigate),
+		NavLink: inputUtils.NavLink && createNavLink(inputUtils.NavLink),
 	};
 }

@@ -416,11 +416,12 @@ export interface DataConfig extends RouteConfig {
 }
 
 type Link<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, $.LinkProps>
+	props: LinkProps<TPath, $.LinkProps> & React.RefAttributes<HTMLAnchorElement>
 ) => ReturnType<InputRenderUtils['Link']>;
 
 type NavLink<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, $.NavLinkProps>
+	props: LinkProps<TPath, $.NavLinkProps> &
+		React.RefAttributes<HTMLAnchorElement>
 ) => ReturnType<InputRenderUtils['NavLink']>;
 
 type Navigate<TPaths extends string> = <TPath extends TPaths>(
@@ -432,7 +433,7 @@ interface NavigateFunction<TPaths extends string> {
 	(delta: number): void;
 }
 
-// Add support for narrowing paths by available actions (needs to support index routes)
+// TODO: add support for narrowing paths by available actions (needs to support index routes)
 type SubmitOptions<
 	TMethod extends $.FormMethod,
 	TPath extends string,
@@ -452,7 +453,8 @@ type Form<TPaths extends string, TAction extends ActionWrapper> = <
 	TMethod extends $.FormMethod = never,
 	TPath extends TPaths = never
 >(
-	props: SubmitOptions<TMethod, TPath, TAction, $.FormProps>
+	props: SubmitOptions<TMethod, TPath, TAction, $.FormProps> &
+		React.RefAttributes<HTMLFormElement>
 ) => ReturnType<InputRenderUtils['Form']>;
 
 type SubmitFunction<TPaths extends string, TAction extends ActionWrapper> = <
@@ -467,7 +469,7 @@ type ActionData<TActionWrapper extends ActionWrapper> = Awaited<
 	ReturnType<TActionWrapper['value']>
 >;
 
-// ADD SUPPORT FOR DEFER ETC.
+// TODO: add support for defer etc.
 type LoaderData<TLoaderWrapper extends LoaderWrapper> = Awaited<
 	ReturnType<TLoaderWrapper['value']>
 >;
