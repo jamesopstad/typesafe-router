@@ -1,7 +1,6 @@
 {
 	"compilerOptions": {
 		"target": "ESNext",
-		"useDefineForClassFields": true,
 		"lib": ["DOM", "DOM.Iterable", "ESNext"],
 		"allowJs": false,
 		"skipLibCheck": true,
@@ -11,7 +10,6 @@
 		"forceConsistentCasingInFileNames": true,
 		"module": "ESNext",
 		"moduleResolution": "Node",
-		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"noUncheckedIndexedAccess": true,
 		"noEmit": true,

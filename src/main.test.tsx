@@ -1,5 +1,47 @@
-import { normalizePath, setIdSegment, normalizeRoutes } from './main';
-import { describe, it, expect } from 'vitest';
+import { normalizePath, normalizeRoutes, setIdSegment } from './main';
+import { describe, expect, it } from 'vitest';
+
+const testRoutes = [
+	{
+		path: '/',
+		children: [
+			{
+				path: ':1',
+				children: [
+					{
+						children: [
+							{
+								path: ':1-1',
+								children: [
+									{
+										path: ':1-1-1',
+									},
+								],
+							},
+						],
+					},
+					{
+						path: '1-2/:1-2-1?',
+					},
+				],
+			},
+			{
+				path: '2',
+				children: [
+					{
+						index: true,
+					},
+					{
+						path: ':2-1',
+					},
+				],
+			},
+		],
+	},
+	{
+		path: '3?/3-1',
+	},
+];
 
 describe('normalizePath', () => {
 	it('removes leading slashes', () => {
@@ -31,65 +73,37 @@ describe('setIdSegment', () => {
 	});
 });
 
-describe('transformRoutes', () => {
-	const transformedRoutes = normalizeRoutes([
-		{
-			path: '/',
-			children: [
-				{
-					path: '1',
-					children: [
-						{
-							path: '1-1',
-							children: [
-								{
-									path: '1-1-1',
-								},
-							],
-						},
-						{
-							path: '1-2',
-						},
-					],
-				},
-				{
-					path: '2',
-					children: [
-						{
-							path: '2-1',
-						},
-					],
-				},
-			],
-		},
-		{
-			path: '3/3-1',
-		},
-	]);
+describe('normalizeRoutes', () => {
+	const normalizedRoutes = normalizeRoutes(testRoutes);
 
-	it('correctly transforms paths and ids', () => {
-		expect(transformedRoutes).toEqual([
+	it('correctly normalizes paths and ids', () => {
+		expect(normalizedRoutes).toEqual([
 			{
 				id: '/',
 				path: '',
 				children: [
 					{
-						id: '/1',
-						path: '1',
+						id: '/:1',
+						path: ':1',
 						children: [
 							{
-								id: '/1/1-1',
-								path: '1-1',
+								id: '/:1/_',
 								children: [
 									{
-										id: '/1/1-1/1-1-1',
-										path: '1-1-1',
+										id: '/:1/_/:1-1',
+										path: ':1-1',
+										children: [
+											{
+												id: '/:1/_/:1-1/:1-1-1',
+												path: ':1-1-1',
+											},
+										],
 									},
 								],
 							},
 							{
-								id: '/1/1-2',
-								path: '1-2',
+								id: '/:1/1-2/:1-2-1?',
+								path: '1-2/:1-2-1?',
 							},
 						],
 					},
@@ -98,16 +112,20 @@ describe('transformRoutes', () => {
 						path: '2',
 						children: [
 							{
-								id: '/2/2-1',
-								path: '2-1',
+								id: '/2/_index',
+								index: true,
+							},
+							{
+								id: '/2/:2-1',
+								path: ':2-1',
 							},
 						],
 					},
 				],
 			},
 			{
-				id: '/3/3-1',
-				path: '3/3-1',
+				id: '/3?/3-1',
+				path: '3?/3-1',
 			},
 		]);
 	});

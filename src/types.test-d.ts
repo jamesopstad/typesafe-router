@@ -1,21 +1,21 @@
 import type {
-	NormalizePath,
-	SetIdSegment,
-	NormalizeRoutes,
-	SetParams,
-	ConvertOptionalPathSegments,
-	FlattenRoutes,
-	ExtractById,
-	DescendantPaths,
-	AncestorPaths,
 	AbsolutePaths,
-	Paths,
-	PathParams,
 	AncestorParams,
+	AncestorPaths,
+	ConvertOptionalPathSegments,
 	DescendantParams,
+	DescendantPaths,
+	ExtractById,
+	FlattenRoutes,
+	NormalizePath,
+	NormalizeRoutes,
 	Params,
+	PathParams,
+	Paths,
+	SetIdSegment,
+	SetParams,
 } from './types';
-import { describe, it, expectTypeOf } from 'vitest';
+import { describe, expectTypeOf, it } from 'vitest';
 
 type TestRoutes = [
 	{
@@ -96,7 +96,7 @@ describe('SetIdSegment', () => {
 describe('NormalizeRoutes', () => {
 	type NormalizedRoutes = NormalizeRoutes<TestRoutes>;
 
-	it('correctly transforms paths and ids', () => {
+	it('correctly normalizes paths and ids', () => {
 		expectTypeOf<NormalizedRoutes>().toEqualTypeOf<
 			[
 				{

@@ -21,6 +21,7 @@ type ExtractUtils<T, U> = Pick<T, Extract<keyof T, keyof U>>;
 
 interface BaseRouteInput {
 	id?: string;
+	caseSensitive?: boolean;
 }
 
 interface IndexRouteInput extends BaseRouteInput {
