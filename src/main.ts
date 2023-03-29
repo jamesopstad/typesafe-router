@@ -2,12 +2,11 @@ import * as symbols from './symbols';
 import type {
 	ActionFunctionArgs,
 	ComponentFunctionArgs,
-	DataConfig,
+	Config,
 	FlattenRoutes,
 	LoaderFunctionArgs,
 	NormalizeRoutes,
 	Route,
-	RouteConfig,
 	RouteInput,
 } from './types';
 import { enhanceDataUtils, enhanceRenderUtils } from './utils';
@@ -15,7 +14,6 @@ import type { InputDataUtils, InputRenderUtils } from './utils';
 import type {
 	ActionWrapper,
 	ComponentType,
-	ComponentWrapper,
 	EagerOrLazy,
 	LazyValue,
 	LoaderWrapper,
@@ -150,7 +148,7 @@ type InputDataConfig = {
 };
 
 type Builder<
-	TConfig extends DataConfig,
+	TConfig extends Config,
 	TOmit extends string = never,
 	TIds extends string = TConfig['routes']['id']
 > = Omit<
@@ -210,7 +208,7 @@ function builder(routes: Route[], config: InputDataConfig) {
 }
 
 function dataCreators<
-	TConfig extends RouteConfig,
+	TConfig extends Config,
 	TUtils extends Partial<InputDataUtils>
 >(utils: TUtils) {
 	type TIds = TConfig['routes']['id'];
@@ -257,10 +255,8 @@ function dataCreators<
 	};
 }
 
-export function initDataCreators<TBuilder extends Builder<DataConfig>>() {
-	type TConfig = TBuilder extends Builder<infer T extends DataConfig>
-		? T
-		: never;
+export function initDataCreators<TBuilder extends Builder<Config>>() {
+	type TConfig = TBuilder extends Builder<infer T extends Config> ? T : never;
 
 	return {
 		addUtils<TUtils extends Partial<InputDataUtils>>(utils: TUtils) {
@@ -270,7 +266,7 @@ export function initDataCreators<TBuilder extends Builder<DataConfig>>() {
 }
 
 function renderCreators<
-	TConfig extends DataConfig,
+	TConfig extends Config,
 	TUtils extends Partial<InputRenderUtils>
 >(utils: TUtils) {
 	type TIds = TConfig['routes']['id'];
@@ -306,9 +302,9 @@ function renderCreators<
 }
 
 export function initRenderCreators<
-	TBuilder extends Partial<Builder<DataConfig>>
+	TBuilder extends Partial<Builder<Config>>
 >() {
-	type TConfig = TBuilder extends Partial<Builder<infer T extends DataConfig>>
+	type TConfig = TBuilder extends Partial<Builder<infer T extends Config>>
 		? T
 		: never;
 

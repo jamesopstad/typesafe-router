@@ -370,8 +370,10 @@ type LinkParams<
 
 //#region Data functions
 
-export interface RouteConfig {
+export interface Config {
 	routes: FlatRoute;
+	actions: ActionWrapper;
+	loaders: LoaderWrapper;
 }
 
 type RedirectFunction<TPaths extends string = string> = <TPath extends TPaths>(
@@ -382,7 +384,7 @@ type RedirectFunction<TPaths extends string = string> = <TPath extends TPaths>(
 ) => ReturnType<InputDataUtils['redirect']>;
 
 interface DataUtils<
-	TConfig extends RouteConfig = RouteConfig,
+	TConfig extends Config = Config,
 	TRoute extends FlatRoute = FlatRoute,
 	TPaths extends string = Paths<TConfig['routes'], TRoute>
 > {
@@ -390,7 +392,7 @@ interface DataUtils<
 }
 
 export type ActionFunctionArgs<
-	TConfig extends RouteConfig,
+	TConfig extends Config,
 	TId extends string,
 	TInputUtils extends Partial<InputDataUtils>,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
@@ -399,7 +401,7 @@ export type ActionFunctionArgs<
 } & ExtractUtils<DataUtils<TConfig, TRoute>, TInputUtils>;
 
 export type LoaderFunctionArgs<
-	TConfig extends RouteConfig,
+	TConfig extends Config,
 	TId extends string,
 	TInputUtils extends Partial<InputDataUtils>,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
@@ -410,11 +412,6 @@ export type LoaderFunctionArgs<
 //#endregion
 
 //#region Render functions
-
-export interface DataConfig extends RouteConfig {
-	actions: ActionWrapper;
-	loaders: LoaderWrapper;
-}
 
 type Link<TPaths extends string> = <TPath extends TPaths>(
 	props: LinkProps<TPath, $.LinkProps> & React.RefAttributes<HTMLAnchorElement>
@@ -476,7 +473,7 @@ type LoaderData<TLoaderWrapper extends LoaderWrapper> = Awaited<
 >;
 
 type UseRouteLoaderData<
-	TConfig extends DataConfig,
+	TConfig extends Config,
 	TRoute extends FlatRoute,
 	TRequiredIds extends TConfig['routes']['id'] =
 		| AncestorIds<TConfig['routes'], TRoute>
@@ -494,7 +491,7 @@ type UseRouteLoaderData<
 	| (TId extends TOptionalIds ? undefined : never);
 
 interface RenderUtils<
-	TConfig extends DataConfig,
+	TConfig extends Config,
 	TRoute extends FlatRoute,
 	TPaths extends string = Paths<TConfig['routes'], TRoute>,
 	TAction extends ActionWrapper = ExtractById<TConfig['actions'], TRoute['id']>,
@@ -513,7 +510,7 @@ interface RenderUtils<
 }
 
 export type ComponentFunctionArgs<
-	TConfig extends DataConfig,
+	TConfig extends Config,
 	TId extends string,
 	TInputUtils extends Partial<InputRenderUtils>,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
