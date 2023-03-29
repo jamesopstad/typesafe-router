@@ -10,5 +10,6 @@ module.exports = {
 			},
 		},
 	],
+	importOrderSortSpecifiers: true,
 	plugins: [require('@trivago/prettier-plugin-sort-imports')],
 };

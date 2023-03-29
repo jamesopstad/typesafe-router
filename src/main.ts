@@ -1,26 +1,26 @@
 import * as symbols from './symbols';
 import type {
-	RouteInput,
+	ActionFunctionArgs,
+	ComponentFunctionArgs,
+	DataConfig,
+	FlattenRoutes,
+	LoaderFunctionArgs,
 	NormalizeRoutes,
 	Route,
-	FlattenRoutes,
 	RouteConfig,
-	DataConfig,
-	ActionFunctionArgs,
-	LoaderFunctionArgs,
-	ComponentFunctionArgs,
+	RouteInput,
 } from './types';
 import { enhanceDataUtils, enhanceRenderUtils } from './utils';
 import type { InputDataUtils, InputRenderUtils } from './utils';
 import type {
-	ComponentType,
-	Wrapper,
 	ActionWrapper,
-	LoaderWrapper,
-	LazyValue,
-	RouteProps,
+	ComponentType,
 	EagerOrLazy,
+	LazyValue,
+	LoaderWrapper,
+	RouteProps,
 	UnwrapEagerOrLazy,
+	Wrapper,
 } from './wrappers';
 import type * as $ from 'react-router-dom';
 
