@@ -15,6 +15,7 @@ import type { InputDataUtils, InputRenderUtils } from './utils';
 import type {
 	ActionWrapper,
 	ComponentType,
+	ComponentWrapper,
 	EagerOrLazy,
 	LazyValue,
 	LoaderWrapper,
@@ -62,25 +63,17 @@ export function normalizeRoutes(
 	});
 }
 
-type Container<
-	TConfig,
-	TCreator = unknown,
-	TOmit extends string = never
-> = Omit<TCreator, TOmit>;
-
 export function createRouteConfig<TRoutes extends readonly RouteInput[]>(
 	routes: TRoutes
-) {
-	interface TConfig {
-		routes: Extract<
-			FlattenRoutes<NormalizeRoutes<TRoutes>>,
-			{ id: string; params: {} }
-		>;
-		actions: never;
-		loaders: never;
-	}
-
-	return createDataConfig<TConfig>(normalizeRoutes(routes), {
+): Builder<{
+	routes: Extract<
+		FlattenRoutes<NormalizeRoutes<TRoutes>>,
+		{ id: string; params: {} }
+	>;
+	actions: never;
+	loaders: never;
+}> {
+	return builder(normalizeRoutes(routes), {
 		action: {},
 		loader: {},
 		Component: {},
@@ -156,56 +149,56 @@ type InputDataConfig = {
 	[K in RouteProps]: Record<string, EagerOrLazy<K>>;
 };
 
-function createDataConfig<
+type Builder<
 	TConfig extends DataConfig,
-	TOmit extends string = never
->(routes: Route[], config: InputDataConfig) {
-	type TIds = TConfig['routes']['id'];
-
-	const output = {
+	TOmit extends string = never,
+	TIds extends string = TConfig['routes']['id']
+> = Omit<
+	{
 		addActions<TActions extends EagerOrLazy<'action', TIds>[]>(
 			...actions: TActions
-		) {
-			return createDataConfig<
-				Omit<TConfig, 'actions'> & {
-					actions: {
-						[K in keyof TActions]: UnwrapEagerOrLazy<
-							TActions[K],
-							ActionWrapper
-						>;
-					}[number];
-				},
-				TOmit | 'addActions'
-			>(routes, {
+		): Builder<
+			Omit<TConfig, 'actions'> & {
+				actions: {
+					[K in keyof TActions]: UnwrapEagerOrLazy<TActions[K], ActionWrapper>;
+				}[number];
+			},
+			TOmit | 'addActions'
+		>;
+		addLoaders<TLoaders extends EagerOrLazy<'loader', TIds>[]>(
+			...loaders: TLoaders
+		): Builder<
+			Omit<TConfig, 'loaders'> & {
+				loaders: {
+					[K in keyof TLoaders]: UnwrapEagerOrLazy<TLoaders[K], LoaderWrapper>;
+				}[number];
+			},
+			TOmit | 'addLoaders'
+		>;
+		addComponents<TComponents extends EagerOrLazy<'Component', TIds>[]>(
+			...components: TComponents
+		): Builder<TConfig, TOmit | 'addActions' | 'addLoaders' | 'addComponents'>;
+		toRoutes(): $.RouteObject[];
+	},
+	TOmit
+>;
+
+function builder(routes: Route[], config: InputDataConfig) {
+	return {
+		addActions(...actions: EagerOrLazy<'action'>[]) {
+			return builder(routes, {
 				...config,
 				action: toObject('action', actions),
 			});
 		},
-		addLoaders<TLoaders extends EagerOrLazy<'loader', TIds>[]>(
-			...loaders: TLoaders
-		) {
-			return createDataConfig<
-				Omit<TConfig, 'loaders'> & {
-					loaders: {
-						[K in keyof TLoaders]: UnwrapEagerOrLazy<
-							TLoaders[K],
-							LoaderWrapper
-						>;
-					}[number];
-				},
-				TOmit | 'addLoaders'
-			>(routes, {
+		addLoaders(...loaders: EagerOrLazy<'loader'>[]) {
+			return builder(routes, {
 				...config,
 				loader: toObject('loader', loaders),
 			});
 		},
-		addComponents<TComponents extends EagerOrLazy<'Component', TIds>[]>(
-			...components: TComponents
-		) {
-			return createDataConfig<
-				TConfig,
-				TOmit | 'addActions' | 'addLoaders' | 'addComponents'
-			>(routes, {
+		addComponents(...components: EagerOrLazy<'Component'>[]) {
+			return builder(routes, {
 				...config,
 				Component: toObject('Component', components),
 			});
@@ -214,8 +207,6 @@ function createDataConfig<
 			return toRoutes(routes, config);
 		},
 	};
-
-	return output as Container<TConfig, typeof output, TOmit>;
 }
 
 function dataCreators<
@@ -266,8 +257,8 @@ function dataCreators<
 	};
 }
 
-export function initDataCreators<TContainer extends Container<RouteConfig>>() {
-	type TConfig = TContainer extends Container<infer T extends RouteConfig>
+export function initDataCreators<TBuilder extends Builder<DataConfig>>() {
+	type TConfig = TBuilder extends Builder<infer T extends DataConfig>
 		? T
 		: never;
 
@@ -314,8 +305,10 @@ function renderCreators<
 	};
 }
 
-export function initRenderCreators<TContainer extends Container<DataConfig>>() {
-	type TConfig = TContainer extends Container<infer T extends DataConfig>
+export function initRenderCreators<
+	TBuilder extends Partial<Builder<DataConfig>>
+>() {
+	type TConfig = TBuilder extends Partial<Builder<infer T extends DataConfig>>
 		? T
 		: never;
 
