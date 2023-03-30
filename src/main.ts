@@ -17,11 +17,16 @@ import type {
 	EagerOrLazy,
 	LazyValue,
 	LoaderWrapper,
-	RouteProps,
 	UnwrapEagerOrLazy,
 	Wrapper,
 } from './wrappers';
 import type * as $ from 'react-router-dom';
+
+const routeProps = ['action', 'loader', 'Component', 'ErrorBoundary'] as const;
+
+export type RouteProps = (typeof routeProps)[number];
+
+//#region Normalize input routes
 
 export function normalizePath(route: RouteInput) {
 	return typeof route.path === 'string'
@@ -61,23 +66,55 @@ export function normalizeRoutes(
 	});
 }
 
-export function createRouteConfig<TRoutes extends readonly RouteInput[]>(
-	routes: TRoutes
-): Builder<{
-	routes: Extract<
-		FlattenRoutes<NormalizeRoutes<TRoutes>>,
-		{ id: string; params: {} }
-	>;
-	actions: never;
-	loaders: never;
-}> {
-	return builder(normalizeRoutes(routes), {
-		action: {},
-		loader: {},
-		Component: {},
-		ErrorBoundary: {},
-	});
-}
+//#endregion
+
+//#region Builder
+
+type InputConfig = {
+	[K in RouteProps]: Record<string, EagerOrLazy<K>>;
+};
+
+type Builder<
+	TConfig extends Config,
+	TOmit extends string = never,
+	TIds extends string = TConfig['routes']['id']
+> = Omit<
+	{
+		addActions<TActions extends EagerOrLazy<'action', TIds>[]>(
+			...actions: TActions
+		): Builder<
+			Omit<TConfig, 'actions'> & {
+				actions: {
+					[K in keyof TActions]: UnwrapEagerOrLazy<TActions[K], ActionWrapper>;
+				}[number];
+			},
+			TOmit | 'addActions'
+		>;
+		addLoaders<TLoaders extends EagerOrLazy<'loader', TIds>[]>(
+			...loaders: TLoaders
+		): Builder<
+			Omit<TConfig, 'loaders'> & {
+				loaders: {
+					[K in keyof TLoaders]: UnwrapEagerOrLazy<TLoaders[K], LoaderWrapper>;
+				}[number];
+			},
+			TOmit | 'addLoaders'
+		>;
+		addComponents<TComponents extends EagerOrLazy<'Component', TIds>[]>(
+			...components: TComponents
+		): Builder<TConfig, TOmit | 'addActions' | 'addLoaders' | 'addComponents'>;
+		addErrorBoundaries<
+			TErrorBoundaries extends EagerOrLazy<'ErrorBoundary', TIds>[]
+		>(
+			...errorBoundaries: TErrorBoundaries
+		): Builder<
+			TConfig,
+			TOmit | 'addActions' | 'addLoaders' | 'addErrorBoundaries'
+		>;
+		toRoutes(): $.RouteObject[];
+	},
+	TOmit
+>;
 
 function toObject<TType extends RouteProps>(
 	type: TType,
@@ -89,7 +126,7 @@ function toObject<TType extends RouteProps>(
 		}
 
 		if (output[item.id]) {
-			throw Error(`Multiple ${type} entries found for route '${item.id}`);
+			throw Error(`Multiple ${type} entries were found for route '${item.id}`);
 		}
 
 		output[item.id] = item;
@@ -98,17 +135,12 @@ function toObject<TType extends RouteProps>(
 	}, {} as Record<string, EagerOrLazy<TType>>);
 }
 
-function toRoutes(routes: readonly Route[], config: InputDataConfig) {
+function toRoutes(routes: readonly Route[], config: InputConfig) {
 	return routes.map((route): unknown => {
 		const eager: Partial<Record<RouteProps, unknown>> = {};
 		const lazy: Partial<Record<RouteProps, LazyValue>> = {};
 
-		for (const prop of [
-			'action',
-			'loader',
-			'Component',
-			'ErrorBoundary',
-		] as const) {
+		for (const prop of routeProps) {
 			const item = config[prop][route.id];
 
 			if (!item) continue;
@@ -143,45 +175,36 @@ function toRoutes(routes: readonly Route[], config: InputDataConfig) {
 	}) as $.RouteObject[];
 }
 
-type InputDataConfig = {
-	[K in RouteProps]: Record<string, EagerOrLazy<K>>;
-};
+export function lazy<
+	TId extends string,
+	TValue extends LazyValue<string, Wrapper<TId>>
+>(id: TId, value: TValue) {
+	return {
+		id,
+		type: symbols.lazy,
+		value,
+	} as const;
+}
 
-type Builder<
-	TConfig extends Config,
-	TOmit extends string = never,
-	TIds extends string = TConfig['routes']['id']
-> = Omit<
-	{
-		addActions<TActions extends EagerOrLazy<'action', TIds>[]>(
-			...actions: TActions
-		): Builder<
-			Omit<TConfig, 'actions'> & {
-				actions: {
-					[K in keyof TActions]: UnwrapEagerOrLazy<TActions[K], ActionWrapper>;
-				}[number];
-			},
-			TOmit | 'addActions'
-		>;
-		addLoaders<TLoaders extends EagerOrLazy<'loader', TIds>[]>(
-			...loaders: TLoaders
-		): Builder<
-			Omit<TConfig, 'loaders'> & {
-				loaders: {
-					[K in keyof TLoaders]: UnwrapEagerOrLazy<TLoaders[K], LoaderWrapper>;
-				}[number];
-			},
-			TOmit | 'addLoaders'
-		>;
-		addComponents<TComponents extends EagerOrLazy<'Component', TIds>[]>(
-			...components: TComponents
-		): Builder<TConfig, TOmit | 'addActions' | 'addLoaders' | 'addComponents'>;
-		toRoutes(): $.RouteObject[];
-	},
-	TOmit
->;
+export function createRouteConfig<TRoutes extends readonly RouteInput[]>(
+	routes: TRoutes
+): Builder<{
+	routes: Extract<
+		FlattenRoutes<NormalizeRoutes<TRoutes>>,
+		{ id: string; params: {} }
+	>;
+	actions: never;
+	loaders: never;
+}> {
+	return builder(normalizeRoutes(routes), {
+		action: {},
+		loader: {},
+		Component: {},
+		ErrorBoundary: {},
+	});
+}
 
-function builder(routes: Route[], config: InputDataConfig) {
+function builder(routes: Route[], config: InputConfig) {
 	return {
 		addActions(...actions: EagerOrLazy<'action'>[]) {
 			return builder(routes, {
@@ -201,11 +224,21 @@ function builder(routes: Route[], config: InputDataConfig) {
 				Component: toObject('Component', components),
 			});
 		},
+		addErrorBoundaries(...errorBoundaries: EagerOrLazy<'ErrorBoundary'>[]) {
+			return builder(routes, {
+				...config,
+				ErrorBoundary: toObject('ErrorBoundary', errorBoundaries),
+			});
+		},
 		toRoutes() {
 			return toRoutes(routes, config);
 		},
 	};
 }
+
+//#endregion
+
+//#region Creators
 
 function dataCreators<
 	TConfig extends Config,
@@ -315,13 +348,4 @@ export function initRenderCreators<
 	};
 }
 
-export function lazy<
-	TId extends string,
-	TValue extends LazyValue<string, Wrapper<TId>>
->(id: TId, value: TValue) {
-	return {
-		id,
-		type: symbols.lazy,
-		value,
-	} as const;
-}
+//#endregion

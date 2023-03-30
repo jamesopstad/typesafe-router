@@ -9,22 +9,20 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
-		"preview": "vite preview",
 		"test": "vitest",
 		"typecheck": "vitest typecheck"
 	},
 	"devDependencies": {
 		"@trivago/prettier-plugin-sort-imports": "^4.1.1",
-		"@types/react": "^18.0.28",
+		"@types/react": "^18.0.31",
 		"@types/react-dom": "^18.0.11",
-		"@vitejs/plugin-react-swc": "^3.2.0",
-		"prettier": "^2.8.4",
+		"prettier": "^2.8.7",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"react-router-dom": "^6.9.0",
+		"react-router-dom": "^6.10.0",
 		"typescript": "^4.9.5",
-		"vite": "^4.2.0",
+		"vite": "^4.2.1",
 		"vite-plugin-dts": "^2.1.0",
-		"vitest": "^0.29.3"
+		"vitest": "^0.29.8"
 	}
 }

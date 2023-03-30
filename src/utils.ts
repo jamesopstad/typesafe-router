@@ -1,5 +1,5 @@
 import type { ParamsObject } from './types';
-import { forwardRef } from 'react';
+import { createElement, forwardRef } from 'react';
 import { createSearchParams, generatePath } from 'react-router-dom';
 import type * as $ from 'react-router-dom';
 
@@ -48,9 +48,11 @@ function createRedirect(original: InputDataUtils['redirect']) {
 function createForm(Original: InputRenderUtils['Form']) {
 	return forwardRef<HTMLFormElement, $.FormProps & { params?: ParamsObject }>(
 		function Form({ action = '', params, relative, ...rest }, ref) {
-			return (
-				<Original {...rest} action={createPath(action, { params })} ref={ref} />
-			);
+			return createElement(Original, {
+				...rest,
+				action: createPath(action, { params }),
+				ref,
+			});
 		}
 	);
 }
@@ -63,13 +65,11 @@ function createLink(Original: InputRenderUtils['Link']) {
 		{ to = '', params, searchParams, hash, relative, ...rest },
 		ref
 	) {
-		return (
-			<Original
-				{...rest}
-				to={createPath(to, { params, searchParams, hash })}
-				ref={ref}
-			/>
-		);
+		return createElement(Original, {
+			...rest,
+			to: createPath(to, { params, searchParams, hash }),
+			ref,
+		});
 	});
 }
 
@@ -83,9 +83,11 @@ function createNavigate(Original: InputRenderUtils['Navigate']) {
 		...rest
 	}: Omit<$.NavigateProps, 'to'> & {
 		to?: string;
-	} & PathOptions) => (
-		<Original {...rest} to={createPath(to, { params, searchParams, hash })} />
-	);
+	} & PathOptions) =>
+		createElement(Original, {
+			...rest,
+			to: createPath(to, { params, searchParams, hash }),
+		});
 }
 
 function createNavLink(Original: InputRenderUtils['NavLink']) {
@@ -96,13 +98,11 @@ function createNavLink(Original: InputRenderUtils['NavLink']) {
 		{ to = '', params, searchParams, hash, relative, ...rest },
 		ref
 	) {
-		return (
-			<Original
-				{...rest}
-				to={createPath(to, { params, searchParams, hash })}
-				ref={ref}
-			/>
-		);
+		return createElement(Original, {
+			...rest,
+			to: createPath(to, { params, searchParams, hash }),
+			ref,
+		});
 	});
 }
 
