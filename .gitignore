@@ -23,8 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# Example
-example
-
 # Temp
 temp.*
