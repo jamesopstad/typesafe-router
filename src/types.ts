@@ -435,32 +435,40 @@ interface NavigateFunction<TPaths extends string> {
 type SubmitOptions<
 	TMethod extends $.FormMethod,
 	TPath extends string,
-	TAction extends ActionWrapper,
+	TActionWrapper extends ActionWrapper,
 	TBaseOptions,
-	TPathParams extends string = PathParams<TPath>
+	TPathParams extends string
 > = Omit<TBaseOptions, 'method' | 'action' | 'relative'> & {
 	method?: TMethod;
-} & ([TMethod] extends ['get' | never]
+} & ('get' extends TMethod
 		? { action?: TPath }
-		: [TAction] extends [never]
+		: [TActionWrapper] extends [never]
 		? { action: TPath }
 		: { action?: TPath }) &
 	([TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> });
 
-type Form<TPaths extends string, TAction extends ActionWrapper> = <
-	TMethod extends $.FormMethod = never,
-	TPath extends TPaths = never
+type Form<TPaths extends string, TActionWrapper extends ActionWrapper> = <
+	TMethod extends $.FormMethod,
+	TPath extends TPaths,
+	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
 >(
-	props: SubmitOptions<TMethod, TPath, TAction, $.FormProps> &
+	props: SubmitOptions<
+		TMethod,
+		TPath,
+		TActionWrapper,
+		$.FormProps,
+		TPathParams
+	> &
 		React.RefAttributes<HTMLFormElement>
 ) => ReturnType<InputRenderUtils['Form']>;
 
 type SubmitFunction<TPaths extends string, TAction extends ActionWrapper> = <
-	TMethod extends $.FormMethod = never,
-	TPath extends TPaths = never
+	TMethod extends $.FormMethod,
+	TPath extends TPaths,
+	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
 >(
 	target: Parameters<$.SubmitFunction>[0],
-	options?: SubmitOptions<TMethod, TPath, TAction, $.SubmitOptions>
+	options?: SubmitOptions<TMethod, TPath, TAction, $.SubmitOptions, TPathParams>
 ) => void;
 
 type ActionData<TActionWrapper extends ActionWrapper> = Awaited<

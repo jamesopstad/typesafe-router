@@ -335,9 +335,12 @@ function renderCreators<
 }
 
 export function initRenderCreators<
-	TBuilder extends Partial<Builder<Config>>
+	TBuilder extends Builder<Config, 'addLoaders' | 'addActions'>
 >() {
-	type TConfig = TBuilder extends Partial<Builder<infer T extends Config>>
+	type TConfig = TBuilder extends Builder<
+		infer T extends Config,
+		'addLoaders' | 'addActions'
+	>
 		? T
 		: never;
 

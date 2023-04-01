@@ -1,13 +1,22 @@
 {
 	"name": "typesafe-router",
-	"private": true,
-	"version": "0.0.0",
+	"version": "0.0.8",
+	"description": "",
+	"keywords": [],
+	"author": "James Opstad",
+	"repository": {
+		"type": "git",
+		"url": ""
+	},
+	"license": "MIT",
 	"type": "module",
-	"types": "dist/types/index.d.ts",
-	"module": "dist/index.ts",
+	"files": [
+		"dist"
+	],
+	"types": "./dist/types/index.d.ts",
+	"module": "./dist/typesafe-router.js",
 	"sideEffects": false,
 	"scripts": {
-		"dev": "vite",
 		"build": "vite build",
 		"test": "vitest",
 		"typecheck": "vitest typecheck"
