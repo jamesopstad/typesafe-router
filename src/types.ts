@@ -74,8 +74,8 @@ type SetId<
 		  });
 
 type _NormalizeRoutes<TRoute extends RouteInput> = Omit<TRoute, 'children'> &
-	(TRoute extends { children: infer TChildren extends RouteInput[] }
-		? { children: NormalizeRoutes<TChildren, TRoute> }
+	(TRoute extends { children: infer TChildren extends readonly RouteInput[] }
+		? { readonly children: NormalizeRoutes<TChildren, TRoute> }
 		: {});
 
 export type NormalizeRoutes<
@@ -91,7 +91,7 @@ export interface Route {
 	id: string;
 	path?: string;
 	index?: boolean;
-	children?: Route[];
+	children?: readonly Route[];
 }
 
 //#endregion
@@ -153,10 +153,10 @@ type _FlattenRoutes<TRoute extends Route, TParentId extends string> =
 				  }
 				: { params: {} }) &
 			([TParentId] extends [never] ? {} : { parentId: TParentId }) &
-			(TRoute extends { children: infer TChildren extends Route[] }
+			(TRoute extends { children: infer TChildren extends readonly Route[] }
 				? { childIds: TChildren[number]['id'] }
 				: {}))
-	| (TRoute extends { children: infer TChildren extends Route[] }
+	| (TRoute extends { children: infer TChildren extends readonly Route[] }
 			? FlattenRoutes<TChildren, TRoute['id']>
 			: never);
 
