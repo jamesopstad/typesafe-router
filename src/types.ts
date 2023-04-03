@@ -61,10 +61,10 @@ type SetId<
 	TRoute extends RouteInput,
 	TParentRoute extends RouteInput
 > = TRoute &
-	(TRoute extends { readonly id: string }
+	(TRoute extends { id: string }
 		? {}
 		: {
-				readonly id: `${TParentRoute extends {
+				id: `${TParentRoute extends {
 					id: infer TParentId extends string;
 				}
 					? TParentId extends '/'
@@ -74,8 +74,8 @@ type SetId<
 		  });
 
 type _NormalizeRoutes<TRoute extends RouteInput> = Omit<TRoute, 'children'> &
-	(TRoute extends { children: infer TChildren extends readonly RouteInput[] }
-		? { readonly children: NormalizeRoutes<TChildren, TRoute> }
+	(TRoute extends { children: infer TChildren extends RouteInput[] }
+		? { children: NormalizeRoutes<TChildren, TRoute> }
 		: {});
 
 export type NormalizeRoutes<
@@ -91,7 +91,7 @@ export interface Route {
 	id: string;
 	path?: string;
 	index?: boolean;
-	children?: readonly Route[];
+	children?: Route[];
 }
 
 //#endregion
@@ -148,15 +148,15 @@ type _FlattenRoutes<TRoute extends Route, TParentId extends string> =
 	| (Omit<TRoute, 'path' | 'children'> &
 			(TRoute extends { path: infer TPath extends string }
 				? {
-						readonly path: ConvertOptionalPathSegments<TPath>;
-						readonly params: SetParams<TPath>;
+						path: ConvertOptionalPathSegments<TPath>;
+						params: SetParams<TPath>;
 				  }
-				: { readonly params: {} }) &
-			([TParentId] extends [never] ? {} : { readonly parentId: TParentId }) &
-			(TRoute extends { children: infer TChildren extends readonly Route[] }
-				? { readonly childIds: TChildren[number]['id'] }
+				: { params: {} }) &
+			([TParentId] extends [never] ? {} : { parentId: TParentId }) &
+			(TRoute extends { children: infer TChildren extends Route[] }
+				? { childIds: TChildren[number]['id'] }
 				: {}))
-	| (TRoute extends { children: infer TChildren extends readonly Route[] }
+	| (TRoute extends { children: infer TChildren extends Route[] }
 			? FlattenRoutes<TChildren, TRoute['id']>
 			: never);
 
@@ -350,20 +350,20 @@ type LinkOptions<TBaseOptions> = Omit<TBaseOptions, 'to' | 'relative'> & {
 };
 
 type LinkProps<
-	TPath extends string,
 	TBaseOptions,
-	TPathParams extends string = PathParams<TPath>,
+	TPath extends string,
+	TPathParams extends string,
 	TOptions = LinkOptions<TBaseOptions>
-> = { to: TPath } & TOptions &
+> = { to?: TPath } & TOptions &
 	([TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> });
 
 type LinkParams<
-	TPath extends string,
 	TBaseOptions,
-	TPathParams extends string = PathParams<TPath>,
+	TPath extends string,
+	TPathParams extends string,
 	TOptions = LinkOptions<TBaseOptions>
 > = [TPathParams] extends [never]
-	? [to: TPath, options?: TOptions]
+	? [to?: TPath, options?: TOptions]
 	: [to: TPath, options: TOptions & { params: ParamsObject<TPathParams> }];
 
 //#endregion
@@ -376,10 +376,14 @@ export interface Config {
 	loaders: LoaderWrapper;
 }
 
-type RedirectFunction<TPaths extends string = string> = <TPath extends TPaths>(
+type RedirectFunction<TPaths extends string = string> = <
+	TPath extends TPaths,
+	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
+>(
 	...args: LinkParams<
+		{ init?: Parameters<InputDataUtils['redirect']>[1] },
 		TPath,
-		{ init?: Parameters<InputDataUtils['redirect']>[1] }
+		TPathParams
 	>
 ) => ReturnType<InputDataUtils['redirect']>;
 
@@ -413,21 +417,38 @@ export type LoaderFunctionArgs<
 
 //#region Render functions
 
-type Link<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, $.LinkProps> & React.RefAttributes<HTMLAnchorElement>
+type Link<TPaths extends string> = <
+	TPath extends TPaths,
+	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
+>(
+	props: LinkProps<$.LinkProps, TPath, TPathParams> &
+		React.RefAttributes<HTMLAnchorElement>
 ) => ReturnType<InputRenderUtils['Link']>;
 
-type NavLink<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, $.NavLinkProps> &
+type NavLink<TPaths extends string> = <
+	TPath extends TPaths,
+	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
+>(
+	props: LinkProps<$.NavLinkProps, TPath, TPathParams> &
 		React.RefAttributes<HTMLAnchorElement>
 ) => ReturnType<InputRenderUtils['NavLink']>;
 
-type Navigate<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, $.NavigateProps>
+type Navigate<TPaths extends string> = <
+	TPath extends TPaths,
+	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
+>(
+	props: LinkProps<$.NavigateProps, TPath, TPathParams>
 ) => ReturnType<InputRenderUtils['Navigate']>;
 
 interface NavigateFunction<TPaths extends string> {
-	<TPath extends TPaths>(...args: LinkParams<TPath, $.NavigateOptions>): void;
+	<
+		TPath extends TPaths,
+		TPathParams extends string = TPaths extends TPath
+			? never
+			: PathParams<TPath>
+	>(
+		...args: LinkParams<$.NavigateOptions, TPath, TPathParams>
+	): void;
 	(delta: number): void;
 }
 
