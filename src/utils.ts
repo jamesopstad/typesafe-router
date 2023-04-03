@@ -10,8 +10,8 @@ export interface InputDataUtils {
 export interface InputRenderUtils {
 	Form: typeof $.Form;
 	Link: typeof $.Link;
-	Navigate: typeof $.Navigate;
 	NavLink: typeof $.NavLink;
+	Navigate: typeof $.Navigate;
 	useActionData: typeof $.useActionData;
 	useLoaderData: typeof $.useLoaderData;
 	useNavigate: typeof $.useNavigate;
@@ -73,6 +73,22 @@ function createLink(Original: InputRenderUtils['Link']) {
 	});
 }
 
+function createNavLink(Original: InputRenderUtils['NavLink']) {
+	return forwardRef<
+		HTMLAnchorElement,
+		Omit<$.NavLinkProps, 'to'> & { to?: string } & PathOptions
+	>(function Link(
+		{ to = '', params, searchParams, hash, relative, ...rest },
+		ref
+	) {
+		return createElement(Original, {
+			...rest,
+			to: createPath(to, { params, searchParams, hash }),
+			ref,
+		});
+	});
+}
+
 function createNavigate(Original: InputRenderUtils['Navigate']) {
 	return ({
 		to = '',
@@ -88,22 +104,6 @@ function createNavigate(Original: InputRenderUtils['Navigate']) {
 			...rest,
 			to: createPath(to, { params, searchParams, hash }),
 		});
-}
-
-function createNavLink(Original: InputRenderUtils['NavLink']) {
-	return forwardRef<
-		HTMLAnchorElement,
-		Omit<$.NavLinkProps, 'to'> & { to?: string } & PathOptions
-	>(function Link(
-		{ to = '', params, searchParams, hash, relative, ...rest },
-		ref
-	) {
-		return createElement(Original, {
-			...rest,
-			to: createPath(to, { params, searchParams, hash }),
-			ref,
-		});
-	});
 }
 
 function createUseNavigate(original: InputRenderUtils['useNavigate']) {
@@ -156,8 +156,8 @@ export function enhanceRenderUtils(inputUtils: Partial<InputRenderUtils>) {
 		...inputUtils,
 		Form: inputUtils.Form && createForm(inputUtils.Form),
 		Link: inputUtils.Link && createLink(inputUtils.Link),
-		Navigate: inputUtils.Navigate && createNavigate(inputUtils.Navigate),
 		NavLink: inputUtils.NavLink && createNavLink(inputUtils.NavLink),
+		Navigate: inputUtils.Navigate && createNavigate(inputUtils.Navigate),
 		useNavigate:
 			inputUtils.useNavigate && createUseNavigate(inputUtils.useNavigate),
 		useSubmit: inputUtils.useSubmit && createUseSubmit(inputUtils.useSubmit),

@@ -15,4 +15,11 @@ export default defineConfig({
 			external: ['react', 'react-router-dom'],
 		},
 	},
+	test: {
+		environment: 'jsdom',
+		globals: true,
+		typecheck: {
+			include: ['**/*.test-d.ts', '**/*.test.{ts,tsx}'],
+		},
+	},
 });

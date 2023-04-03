@@ -1,5 +1,4 @@
-import { normalizePath, normalizeRoutes, setIdSegment } from './main';
-import { describe, expect, it } from 'vitest';
+import { normalizePath, normalizeRoutes, setIdSegment } from '../main';
 
 const testRoutes = [
 	{

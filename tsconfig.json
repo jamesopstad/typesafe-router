@@ -13,6 +13,7 @@
 		"isolatedModules": true,
 		"noUncheckedIndexedAccess": true,
 		"noEmit": true,
+		"types": ["vitest/globals"],
 		"jsx": "react-jsx"
 	},
 	"include": ["src"],

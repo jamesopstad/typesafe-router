@@ -528,8 +528,8 @@ interface RenderUtils<
 > {
 	Form: Form<TPaths, TAction>;
 	Link: Link<TPaths>;
-	Navigate: Navigate<TPaths>;
 	NavLink: NavLink<TPaths>;
+	Navigate: Navigate<TPaths>;
 	useActionData: () => ActionData<TAction> | undefined;
 	useLoaderData: () => LoaderData<TLoader>;
 	useNavigate: () => NavigateFunction<TPaths>;

@@ -14,8 +14,7 @@ import type {
 	Paths,
 	SetIdSegment,
 	SetParams,
-} from './types';
-import { describe, expectTypeOf, it } from 'vitest';
+} from '../types';
 
 type TestRoutes = [
 	{

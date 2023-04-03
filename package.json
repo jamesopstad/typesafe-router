@@ -22,9 +22,12 @@
 		"typecheck": "vitest typecheck"
 	},
 	"devDependencies": {
+		"@testing-library/react": "^14.0.0",
+		"@testing-library/user-event": "^14.4.3",
 		"@trivago/prettier-plugin-sort-imports": "^4.1.1",
 		"@types/react": "^18.0.31",
 		"@types/react-dom": "^18.0.11",
+		"jsdom": "^21.1.1",
 		"prettier": "^2.8.7",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
