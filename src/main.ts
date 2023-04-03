@@ -320,7 +320,7 @@ function renderCreators<
 			} as const;
 		},
 		createErrorBoundary<TId extends TIds>(
-			id: TIds,
+			id: TId,
 			errorBoundary: (
 				args: ComponentFunctionArgs<TConfig, TId, TUtils>
 			) => ComponentType

@@ -12,12 +12,12 @@ export const Root = createComponent('/', ({ Link, useLoaderData }) => () => {
 		<>
 			<h1>Root component</h1>
 			<p>The loader data is: {loaderData}</p>
-			<Link to="lazy-route">Link</Link>
+			<Link to="lazy-route">Link to lazy-loaded route component</Link>
 			<Outlet />
 		</>
 	);
 });
 
 export const RootErrorBoundary = createErrorBoundary('/', () => () => {
-	return <p>An error occurred</p>;
+	return <h1>Error boundary</h1>;
 });

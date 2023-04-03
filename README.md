@@ -6,11 +6,16 @@ A wrapper library for [React Router](https://reactrouter.com/) that dramatically
 
 ### Features
 
-- Static type safety and autocompletion
+- Static types and autocompletion
 - Builder API
 - Zero dependencies and tiny footprint
 - No code generation
 - Supports lazy loading
+
+### Caveats
+
+- Pre 1.0 (expect additional features and API changes)
+- React Fast Refresh is currently not supported
 
 ## Installation
 
@@ -46,19 +51,21 @@ const routeConfig = createRouteConfig([
     ],
   },
   {
-    path: 'another',
+    path: 'another-route',
   },
 ] as const);
 
 export type RouteConfig = typeof routeConfig;
 ```
 
+> **NOTE:** Make sure to include `as const` after the array. This requirement will be removed once TypeScript 5 is more widely adopted.
+
 ### Initialise the data creator functions and provide any React Router utils you need
 
 ```ts
 // utils.ts
-import { redirect } from 'react-router-dom';
 import { initDataCreators } from 'typesafe-router';
+import { redirect } from 'react-router-dom';
 import type { RouteConfig } from './routes';
 
 export const { createAction, createLoader } =
@@ -98,17 +105,17 @@ const dataConfig = routeConfig
 export type DataConfig = typeof dataConfig;
 ```
 
-### Initialise the render creator functions and provide any React Router utils you intend to use
+### Initialise the render creator functions and provide any React Router utils you need
 
 ```ts
 // utils.ts
 /* existing imports */
 import { initDataCreators } from 'typesafe-router';
 import {
+  Link,
   useActionData,
   useLoaderData,
   useParams,
-  Link,
 } from 'react-router-dom';
 import type { DataConfig } from './routes';
 
@@ -116,10 +123,10 @@ import type { DataConfig } from './routes';
 
 export const { createComponent, createErrorBoundary } =
   initRenderCreators<DataConfig>().addUtils({
+    Link,
     useActionData,
     useLoaderData,
     useParams,
-    Link,
   });
 ```
 
@@ -127,8 +134,7 @@ export const { createComponent, createErrorBoundary } =
 
 ```ts
 // exampleRoute.tsx
-
-/* existing import */
+/* existing imports */
 import { createComponent, createErrorBoundary } from './utils';
 
 export const exampleComponent = createComponent(
@@ -140,17 +146,15 @@ export const exampleComponent = createComponent(
       return (
         <>
           <p>The data is: {loaderData}</p>
-          <Link to="/another">Link</Link>
+          <Link to="/another-route">Link</Link>
         </>
       );
     }
 );
 
 export const exampleErrorBoundary = createErrorBoundary('/', () => () => {
-  return {
-    <p>Error text</p>
-    }
-})
+  return <p>Error text</p>;
+});
 ```
 
 ### Create the routes by adding the components and error boundaries to the data config and calling `toRoutes`
@@ -164,7 +168,7 @@ import { exampleComponent, exampleErrorBoundary } from './exampleRoute';
 
 export const routes = dataConfig
   .addComponents(exampleComponent)
-  .addErrorBoundary(exampleErrorBoundary)
+  .addErrorBoundaries(exampleErrorBoundary)
   .toRoutes();
 ```
 
@@ -178,7 +182,41 @@ import { createBrowserRouter } from 'react-router-dom';
 const router = createBrowserRouter(routes);
 ```
 
+## BONUS: adding a lazy-loaded route component
+
+### Create a new file and component
+
+```ts
+// another-route.tsx
+
+import { createComponent } from './utils';
+
+export const Component = createComponent('/another-route', () => () => {
+  return <h2>Lazy-loaded route component</h2>;
+});
+```
+
+### Import the `lazy` function and use it to add a dynamic import for the new route component
+
+```ts
+// routes.ts
+/* existing imports */
+import { lazy } from 'typesafe-router';
+
+/* existing code */
+
+export const routes = dataConfig
+  .addComponents(
+    exampleComponent,
+    lazy('/another-route', () => import('./another-route'))
+  )
+  .addErrorBoundaries(exampleErrorBoundary)
+  .toRoutes();
+```
+
 ## API
+
+### React Router imports
 
 Typesafe Router currently supports the following React Router utils.
 
@@ -197,7 +235,7 @@ Typesafe Router currently supports the following React Router utils.
 
 This guide will highlight any differences from their React Router equivalents.
 
-> **NOTE:** Paths are defined as string literals and the possible relative and absolute values are inferred. If the path includes dynamic segments then these are required and defined in a `params` object. A `searchParams` object can also be defined. For components (`<Link>`, `<Form>` etc.) these objects are provided as props. For hooks (`useNavigate`, `useSubmit` etc.) they are provided as properties of the second argument.
+> **NOTE:** Paths are defined as string literals and the possible relative and absolute values are inferred. If the path includes dynamic segments then these are required and defined in a `params` object. A `searchParams` object and/or `hash` string can also be defined. For components (`<Link>` etc.) these objects are provided as props. For hooks (`useNavigate`, `useSubmit` etc.) they are provided as properties of the second argument.
 
 ### redirect
 

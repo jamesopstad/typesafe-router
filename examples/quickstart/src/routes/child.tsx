@@ -6,6 +6,10 @@ export const childAction = createAction('/:id', async ({ request }) => {
 
 	if (typeof q !== 'string') return '';
 
+	if (q === 'error') {
+		throw Error();
+	}
+
 	return q;
 });
 
@@ -21,10 +25,11 @@ export const Child = createComponent(
 					<h2>Child route</h2>
 					<p>The ID param is: {params.id}</p>
 					<p>The action data is: {actionData}</p>
-					<Form>
-						<input />
+					<Form method="post">
+						<input name="q" />
 						<button type="submit">Submit</button>
 					</Form>
+					<p>(try submitting 'error' to trigger the error boundary)</p>
 				</>
 			);
 		}
