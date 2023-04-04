@@ -24,14 +24,14 @@ import {
 } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 
-// function renderRouter(routes: RouteObject[], path = '/') {
-// 	const router = createMemoryRouter(routes, { initialEntries: [path] });
+function renderRouter(routes: RouteObject[], path = '/') {
+	const router = createMemoryRouter(routes, { initialEntries: [path] });
 
-// 	return {
-// 		rendered: render(<RouterProvider router={router} />),
-// 		user: userEvent.setup(),
-// 	};
-// }
+	return {
+		rendered: render(<RouterProvider router={router} />),
+		user: userEvent.setup(),
+	};
+}
 
 const routeConfig = createRouteConfig([
 	{
@@ -55,108 +55,108 @@ const routeConfig = createRouteConfig([
 
 export type RouteConfig = typeof routeConfig;
 
-function renderRouter(routes: RouteObject[]) {
-	const router = createMemoryRouter(routes, { initialEntries: ['/'] });
+// function renderRouter(routes: RouteObject[]) {
+// 	const router = createMemoryRouter(routes, { initialEntries: ['/'] });
 
-	return {
-		rendered: render(<RouterProvider router={router} />),
-		user: userEvent.setup(),
-	};
-}
+// 	return {
+// 		rendered: render(<RouterProvider router={router} />),
+// 		user: userEvent.setup(),
+// 	};
+// }
 
-describe('TEMP', () => {
-	it('should work', () => {
-		const routes = [
-			{
-				path: '/',
-				Component: () => <h1>hello</h1>,
-			},
-		];
-
-		const { rendered } = renderRouter(routes);
-
-		expect(rendered.getByRole('heading').textContent).toBe('hello');
-	});
-});
-
-describe('TEMP2', () => {
-	it('should also work', () => {
-		const routes = [
-			{
-				path: '/',
-				Component: () => <h1>world</h1>,
-			},
-		];
-
-		const { rendered } = renderRouter(routes);
-
-		expect(rendered.getByRole('heading').textContent).toBe('world');
-	});
-});
-
-// describe('config', () => {
-// 	it('renders a component', () => {
-// 		const dataConfig = routeConfig;
-// 		type DataConfig = typeof dataConfig;
-
-// 		const { createComponent } = initRenderCreators<DataConfig>().addUtils({});
-
-// 		const Component = createComponent('/', () => () => {
-// 			return <h1>Component</h1>;
-// 		});
-
-// 		const routes = dataConfig.addComponents(Component).toRoutes();
+// describe('TEMP', () => {
+// 	it('should work', () => {
+// 		const routes = [
+// 			{
+// 				path: '/',
+// 				Component: () => <h1>hello</h1>,
+// 			},
+// 		];
 
 // 		const { rendered } = renderRouter(routes);
 
-// 		expect(rendered.getByRole('heading').textContent).toBe('Component');
-// 	});
-
-// 	it('renders a lazy component', async () => {
-// 		const routes = routeConfig
-// 			.addComponents(lazy('/', () => import('./lazy-component')))
-// 			.toRoutes();
-
-// 		const { rendered } = renderRouter(routes);
-
-// 		expect((await rendered.findByRole('heading')).textContent).toBe(
-// 			'Component'
-// 		);
-// 	});
-
-// 	it('renders an error boundary', async () => {
-// 		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
-
-// 		const loader = createLoader('/', () => {
-// 			throw Error();
-// 		});
-
-// 		const dataConfig = routeConfig.addLoaders(loader);
-// 		type DataConfig = typeof dataConfig;
-
-// 		const { createComponent, createErrorBoundary } =
-// 			initRenderCreators<DataConfig>().addUtils({});
-
-// 		const Component = createComponent('/', () => () => {
-// 			return <h1>Component</h1>;
-// 		});
-
-// 		const ErrorBoundary = createErrorBoundary('/', () => () => {
-// 			return <h1>Error Boundary</h1>;
-// 		});
-
-// 		const routes = dataConfig
-// 			.addComponents(Component)
-// 			.addErrorBoundaries(ErrorBoundary)
-// 			.toRoutes();
-
-// 		const { rendered } = renderRouter(routes);
-
-// 		expect((await rendered.findByRole('heading')).textContent).toBe(
-// 			'Error Boundary'
-// 		);
+// 		expect(rendered.getByRole('heading').textContent).toBe('hello');
 // 	});
 // });
+
+// describe('TEMP2', () => {
+// 	it('should also work', () => {
+// 		const routes = [
+// 			{
+// 				path: '/',
+// 				Component: () => <h1>world</h1>,
+// 			},
+// 		];
+
+// 		const { rendered } = renderRouter(routes);
+
+// 		expect(rendered.getByRole('heading').textContent).toBe('world');
+// 	});
+// });
+
+describe('config', () => {
+	it('renders a component', () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({});
+
+		const Component = createComponent('/', () => () => {
+			return <h1>Component</h1>;
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		const { rendered } = renderRouter(routes);
+
+		expect(rendered.getByRole('heading').textContent).toBe('Component');
+	});
+
+	// it('renders a lazy component', async () => {
+	// 	const routes = routeConfig
+	// 		.addComponents(lazy('/', () => import('./lazy-component')))
+	// 		.toRoutes();
+
+	// 	const { rendered } = renderRouter(routes);
+
+	// 	expect((await rendered.findByRole('heading')).textContent).toBe(
+	// 		'Component'
+	// 	);
+	// });
+
+	// it('renders an error boundary', async () => {
+	// 	const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
+
+	// 	const loader = createLoader('/', () => {
+	// 		throw Error();
+	// 	});
+
+	// 	const dataConfig = routeConfig.addLoaders(loader);
+	// 	type DataConfig = typeof dataConfig;
+
+	// 	const { createComponent, createErrorBoundary } =
+	// 		initRenderCreators<DataConfig>().addUtils({});
+
+	// 	const Component = createComponent('/', () => () => {
+	// 		return <h1>Component</h1>;
+	// 	});
+
+	// 	const ErrorBoundary = createErrorBoundary('/', () => () => {
+	// 		return <h1>Error Boundary</h1>;
+	// 	});
+
+	// 	const routes = dataConfig
+	// 		.addComponents(Component)
+	// 		.addErrorBoundaries(ErrorBoundary)
+	// 		.toRoutes();
+
+	// 	const { rendered } = renderRouter(routes);
+
+	// 	expect((await rendered.findByRole('heading')).textContent).toBe(
+	// 		'Error Boundary'
+	// 	);
+	// });
+});
 
 // //#region Params
 
