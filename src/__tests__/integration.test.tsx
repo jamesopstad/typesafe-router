@@ -55,6 +55,12 @@ const routeConfig = createRouteConfig([
 
 export type RouteConfig = typeof routeConfig;
 
+describe('TEMP', () => {
+	const rendered = render(<h1>Hello world</h1>);
+
+	expect(rendered.getByRole('heading').textContent).toBe('Hello world');
+});
+
 describe('config', () => {
 	it('renders a component', () => {
 		const dataConfig = routeConfig;
