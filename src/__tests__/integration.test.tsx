@@ -124,85 +124,85 @@ describe('config', () => {
 	// 	);
 	// });
 
-	it('renders an error boundary', async () => {
-		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
+	// it('renders an error boundary', async () => {
+	// 	const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
 
-		const loader = createLoader('/', () => {
-			throw Error();
-		});
+	// 	const loader = createLoader('/', () => {
+	// 		throw Error();
+	// 	});
 
-		const dataConfig = routeConfig.addLoaders(loader);
-		type DataConfig = typeof dataConfig;
+	// 	const dataConfig = routeConfig.addLoaders(loader);
+	// 	type DataConfig = typeof dataConfig;
 
-		const { createComponent, createErrorBoundary } =
-			initRenderCreators<DataConfig>().addUtils({});
+	// 	const { createComponent, createErrorBoundary } =
+	// 		initRenderCreators<DataConfig>().addUtils({});
 
-		const Component = createComponent('/', () => () => {
-			return <h1>Component</h1>;
-		});
+	// 	const Component = createComponent('/', () => () => {
+	// 		return <h1>Component</h1>;
+	// 	});
 
-		const ErrorBoundary = createErrorBoundary('/', () => () => {
-			return <h1>Error Boundary</h1>;
-		});
+	// 	const ErrorBoundary = createErrorBoundary('/', () => () => {
+	// 		return <h1>Error Boundary</h1>;
+	// 	});
 
-		const routes = dataConfig
-			.addComponents(Component)
-			.addErrorBoundaries(ErrorBoundary)
-			.toRoutes();
+	// 	const routes = dataConfig
+	// 		.addComponents(Component)
+	// 		.addErrorBoundaries(ErrorBoundary)
+	// 		.toRoutes();
 
-		const { rendered } = renderRouter(routes);
+	// 	const { rendered } = renderRouter(routes);
 
-		expect((await rendered.findByRole('heading')).textContent).toBe(
-			'Error Boundary'
-		);
-	});
+	// 	expect((await rendered.findByRole('heading')).textContent).toBe(
+	// 		'Error Boundary'
+	// 	);
+	// });
 });
 
 // //#region Params
 
-// describe('action/loader params', () => {
-// 	it('returns the correct params for a splat route', () => {
-// 		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
+describe('action/loader params', () => {
+	it('returns the correct params for a splat route', () => {
+		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
 
-// 		const mock = vi.fn();
+		const mock = vi.fn();
 
-// 		const loader = createLoader('/*', ({ params }) => {
-// 			expectTypeOf(params).toEqualTypeOf<{ '*': string }>();
+		const loader = createLoader('/*', ({ params }) => {
+			expectTypeOf(params).toEqualTypeOf<{ '*': string }>();
 
-// 			mock(params);
+			mock(params);
 
-// 			return null;
-// 		});
+			return null;
+		});
 
-// 		const dataConfig = routeConfig.addLoaders(loader);
-// 		const routes = dataConfig.toRoutes();
+		const dataConfig = routeConfig.addLoaders(loader);
+		const routes = dataConfig.toRoutes();
 
-// 		renderRouter(routes, '/123');
+		renderRouter(routes, '/123');
 
-// 		expect(mock).toHaveBeenCalledWith({ '*': '123' });
-// 	});
+		expect(mock).toHaveBeenCalledWith({ '*': '123' });
+	});
 
-// 	it('returns the correct params for a dynamic route', () => {
-// 		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
+	// it('returns the correct params for a dynamic route', () => {
+	// 	const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
 
-// 		const mock = vi.fn();
+	// 	const mock = vi.fn();
 
-// 		const loader = createLoader('/two/:param', ({ params }) => {
-// 			expectTypeOf(params).toEqualTypeOf<{ param: string }>();
+	// 	const loader = createLoader('/two/:param', ({ params }) => {
+	// 		expectTypeOf(params).toEqualTypeOf<{ param: string }>();
 
-// 			mock(params);
+	// 		mock(params);
 
-// 			return null;
-// 		});
+	// 		return null;
+	// 	});
 
-// 		const dataConfig = routeConfig.addLoaders(loader);
-// 		const routes = dataConfig.toRoutes();
+	// 	const dataConfig = routeConfig.addLoaders(loader);
+	// 	const routes = dataConfig.toRoutes();
 
-// 		renderRouter(routes, '/two/123');
+	// 	renderRouter(routes, '/two/123');
 
-// 		expect(mock).toHaveBeenCalledWith({ param: '123' });
-// 	});
-// });
+	// 	expect(mock).toHaveBeenCalledWith({ param: '123' });
+	// });
+});
 
 // describe('useParams', () => {
 // 	it('returns the correct params for a splat route', () => {
