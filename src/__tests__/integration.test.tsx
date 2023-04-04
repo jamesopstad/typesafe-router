@@ -24,14 +24,14 @@ import {
 } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 
-function renderRouter(routes: RouteObject[], path = '/') {
-	const router = createMemoryRouter(routes, { initialEntries: [path] });
+// function renderRouter(routes: RouteObject[], path = '/') {
+// 	const router = createMemoryRouter(routes, { initialEntries: [path] });
 
-	return {
-		rendered: render(<RouterProvider router={router} />),
-		user: userEvent.setup(),
-	};
-}
+// 	return {
+// 		rendered: render(<RouterProvider router={router} />),
+// 		user: userEvent.setup(),
+// 	};
+// }
 
 const routeConfig = createRouteConfig([
 	{
@@ -55,9 +55,29 @@ const routeConfig = createRouteConfig([
 
 export type RouteConfig = typeof routeConfig;
 
+function renderRouter(routes: RouteObject[]) {
+	const router = createMemoryRouter(routes);
+
+	return {
+		rendered: render(<RouterProvider router={router} />),
+	};
+}
+
 describe('TEMP', () => {
 	it('should work', () => {
-		const rendered = render(<h1>hello</h1>);
+		const routes = [
+			{
+				path: '/',
+				Component: () => <h1>hello</h1>,
+			},
+		];
+
+		const { rendered } = renderRouter(routes);
+
+		// const router = createMemoryRouter([
+		// ]);
+
+		// const rendered = render(<RouterProvider router={router} />);
 
 		expect(rendered.getByRole('heading').textContent).toBe('hello');
 	});
@@ -65,7 +85,14 @@ describe('TEMP', () => {
 
 describe('TEMP2', () => {
 	it('should also work', () => {
-		const rendered = render(<h1>world</h1>);
+		const router = createMemoryRouter([
+			{
+				path: '/',
+				Component: () => <h1>world</h1>,
+			},
+		]);
+
+		const rendered = render(<RouterProvider router={router} />);
 
 		expect(rendered.getByRole('heading').textContent).toBe('world');
 	});
