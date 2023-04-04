@@ -55,7 +55,7 @@ const routeConfig = createRouteConfig([
 
 export type RouteConfig = typeof routeConfig;
 
-describe('Config', () => {
+describe('config', () => {
 	it('renders a component', () => {
 		const dataConfig = routeConfig;
 		type DataConfig = typeof dataConfig;
@@ -74,16 +74,7 @@ describe('Config', () => {
 	});
 
 	it('renders a lazy component', async () => {
-		const dataConfig = routeConfig;
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({});
-
-		const Component = createComponent('/', () => () => {
-			return <h1>Component</h1>;
-		});
-
-		const routes = dataConfig
+		const routes = routeConfig
 			.addComponents(lazy('/', () => import('./lazy-component')))
 			.toRoutes();
 
@@ -128,8 +119,31 @@ describe('Config', () => {
 	});
 });
 
+//#region Params
+
 describe('action/loader params', () => {
-	it('returns the correct params', () => {
+	it('returns the correct params for a splat route', () => {
+		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
+
+		const mock = vi.fn();
+
+		const loader = createLoader('/*', ({ params }) => {
+			expectTypeOf(params).toEqualTypeOf<{ '*': string }>();
+
+			mock(params);
+
+			return null;
+		});
+
+		const dataConfig = routeConfig.addLoaders(loader);
+		const routes = dataConfig.toRoutes();
+
+		renderRouter(routes, '/123');
+
+		expect(mock).toHaveBeenCalledWith({ '*': '123' });
+	});
+
+	it('returns the correct params for a dynamic route', () => {
 		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
 
 		const mock = vi.fn();
@@ -143,7 +157,6 @@ describe('action/loader params', () => {
 		});
 
 		const dataConfig = routeConfig.addLoaders(loader);
-
 		const routes = dataConfig.toRoutes();
 
 		renderRouter(routes, '/two/123');
@@ -151,6 +164,66 @@ describe('action/loader params', () => {
 		expect(mock).toHaveBeenCalledWith({ param: '123' });
 	});
 });
+
+describe('useParams', () => {
+	it('returns the correct params for a splat route', () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			useParams,
+		});
+
+		const mock = vi.fn();
+
+		const Component = createComponent('/*', ({ useParams }) => () => {
+			const params = useParams();
+
+			expectTypeOf(params).toEqualTypeOf<{ '*': string }>();
+
+			mock(params);
+
+			return null;
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		renderRouter(routes, '/123');
+
+		expect(mock).toHaveBeenCalledWith({ '*': '123' });
+	});
+
+	it('returns the correct params for a dynamic route', () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			useParams,
+		});
+
+		const mock = vi.fn();
+
+		const Component = createComponent('/two/:param', ({ useParams }) => () => {
+			const params = useParams();
+
+			expectTypeOf(params).toEqualTypeOf<{ param: string }>();
+
+			mock(params);
+
+			return null;
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		renderRouter(routes, '/two/123');
+
+		expect(mock).toHaveBeenCalledWith({ param: '123' });
+	});
+});
+
+//#endregion
+
+//#region Navigations
 
 describe('redirect', () => {
 	it('navigates to a static route', async () => {
@@ -205,158 +278,6 @@ describe('redirect', () => {
 		const { rendered } = renderRouter(routes);
 
 		expect((await rendered.findByRole('heading')).textContent).toBe('123');
-	});
-});
-
-describe('Form', () => {
-	it('submits the form to an action on the same route', async () => {
-		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
-
-		const mock = vi.fn();
-
-		const action = createAction('/', () => {
-			mock();
-
-			return null;
-		});
-
-		const dataConfig = routeConfig.addActions(action);
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			Form,
-		});
-
-		const Component = createComponent('/', ({ Form }) => () => {
-			return (
-				<Form method="post">
-					<button type="submit">Submit</button>
-				</Form>
-			);
-		});
-
-		const routes = dataConfig.addComponents(Component).toRoutes();
-
-		const { rendered, user } = renderRouter(routes);
-
-		await user.click(rendered.getByRole('button'));
-
-		expect(mock).toHaveBeenCalledOnce();
-	});
-
-	it('submits the form to an action on a different route', async () => {
-		const { createAction } = initDataCreators<RouteConfig>().addUtils({
-			redirect,
-		});
-
-		const mock = vi.fn();
-
-		const action = createAction('/one', ({ redirect }) => {
-			mock();
-
-			return redirect('/');
-		});
-
-		const dataConfig = routeConfig.addActions(action);
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			Form,
-		});
-
-		const Component = createComponent('/', ({ Form }) => () => {
-			return (
-				<Form method="post" action="/one">
-					<button type="submit">Submit</button>
-				</Form>
-			);
-		});
-
-		const routes = dataConfig.addComponents(Component).toRoutes();
-
-		const { rendered, user } = renderRouter(routes);
-
-		await user.click(rendered.getByRole('button'));
-
-		expect(mock).toHaveBeenCalledOnce();
-	});
-});
-
-describe('useSubmit', () => {
-	it('submits the form to an action on the same route', async () => {
-		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
-
-		const mock = vi.fn();
-
-		const action = createAction('/', () => {
-			mock();
-
-			return null;
-		});
-
-		const dataConfig = routeConfig.addActions(action);
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			useSubmit,
-		});
-
-		const Component = createComponent('/', ({ useSubmit }) => () => {
-			const submit = useSubmit();
-
-			return (
-				<button onClick={() => submit(null, { method: 'post' })}>Button</button>
-			);
-		});
-
-		const routes = dataConfig.addComponents(Component).toRoutes();
-
-		const { rendered, user } = renderRouter(routes);
-
-		await user.click(rendered.getByRole('button'));
-
-		expect(mock).toHaveBeenCalledOnce();
-	});
-
-	it('submits the form to an action on a different route', async () => {
-		const { createAction } = initDataCreators<RouteConfig>().addUtils({
-			redirect,
-		});
-
-		const mock = vi.fn();
-
-		const action = createAction('/one', ({ redirect }) => {
-			mock();
-
-			return redirect('/');
-		});
-
-		const dataConfig = routeConfig.addActions(action);
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			useSubmit,
-		});
-
-		const Component = createComponent('/', ({ useSubmit }) => () => {
-			const submit = useSubmit();
-
-			return (
-				<button
-					onClick={() => submit(null, { method: 'post', action: '/one' })}
-				>
-					Button
-				</button>
-			);
-		});
-
-		const routes = dataConfig.addComponents(Component).toRoutes();
-
-		const { rendered, user } = renderRouter(routes);
-
-		await user.click(rendered.getByRole('button'));
-
-		expect(mock).toHaveBeenCalledOnce();
 	});
 });
 
@@ -478,6 +399,57 @@ describe('NavLink', () => {
 	});
 });
 
+describe('Navigate', () => {
+	it('navigates to a static route', () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			Navigate,
+		});
+
+		const Start = createComponent('/', ({ Navigate }) => () => {
+			return <Navigate to="/one" />;
+		});
+
+		const End = createComponent('/one', () => () => {
+			return <h1>End</h1>;
+		});
+
+		const routes = dataConfig.addComponents(Start, End).toRoutes();
+
+		const { rendered } = renderRouter(routes);
+
+		expect(rendered.getByRole('heading').textContent).toBe('End');
+	});
+
+	it('navigates to a dynamic route', () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			Navigate,
+			useParams,
+		});
+
+		const Start = createComponent('/', ({ Navigate }) => () => {
+			return <Navigate to="/two/:param" params={{ param: '123' }} />;
+		});
+
+		const End = createComponent('/two/:param', ({ useParams }) => () => {
+			const params = useParams();
+
+			return <h1>{params.param}</h1>;
+		});
+
+		const routes = dataConfig.addComponents(Start, End).toRoutes();
+
+		const { rendered } = renderRouter(routes);
+
+		expect(rendered.getByRole('heading').textContent).toBe('123');
+	});
+});
+
 describe('useNavigate', () => {
 	it('navigates to a static route', async () => {
 		const dataConfig = routeConfig;
@@ -543,56 +515,165 @@ describe('useNavigate', () => {
 	});
 });
 
-describe('Navigate', () => {
-	it('navigates to a static route', () => {
-		const dataConfig = routeConfig;
+//#endregion
+
+//#region Submissions
+
+describe('Form', () => {
+	it('submits the form to an action at the same route', async () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+
+		const mock = vi.fn();
+
+		const action = createAction('/', () => {
+			mock();
+
+			return null;
+		});
+
+		const dataConfig = routeConfig.addActions(action);
 		type DataConfig = typeof dataConfig;
 
 		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			Navigate,
+			Form,
 		});
 
-		const Start = createComponent('/', ({ Navigate }) => () => {
-			return <Navigate to="/one" />;
+		const Component = createComponent('/', ({ Form }) => () => {
+			return (
+				<Form method="post">
+					<button type="submit">Submit</button>
+				</Form>
+			);
 		});
 
-		const End = createComponent('/one', () => () => {
-			return <h1>End</h1>;
-		});
+		const routes = dataConfig.addComponents(Component).toRoutes();
 
-		const routes = dataConfig.addComponents(Start, End).toRoutes();
+		const { rendered, user } = renderRouter(routes);
 
-		const { rendered } = renderRouter(routes);
+		await user.click(rendered.getByRole('button'));
 
-		expect(rendered.getByRole('heading').textContent).toBe('End');
+		expect(mock).toHaveBeenCalledOnce();
 	});
 
-	it('navigates to a dynamic route', () => {
-		const dataConfig = routeConfig;
+	it('submits the form to an action at a different route', async () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({
+			redirect,
+		});
+
+		const mock = vi.fn();
+
+		const action = createAction('/one', ({ redirect }) => {
+			mock();
+
+			return redirect('/');
+		});
+
+		const dataConfig = routeConfig.addActions(action);
 		type DataConfig = typeof dataConfig;
 
 		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			Navigate,
-			useParams,
+			Form,
 		});
 
-		const Start = createComponent('/', ({ Navigate }) => () => {
-			return <Navigate to="/two/:param" params={{ param: '123' }} />;
+		const Component = createComponent('/', ({ Form }) => () => {
+			return (
+				<Form method="post" action="/one">
+					<button type="submit">Submit</button>
+				</Form>
+			);
 		});
 
-		const End = createComponent('/two/:param', ({ useParams }) => () => {
-			const params = useParams();
+		const routes = dataConfig.addComponents(Component).toRoutes();
 
-			return <h1>{params.param}</h1>;
-		});
+		const { rendered, user } = renderRouter(routes);
 
-		const routes = dataConfig.addComponents(Start, End).toRoutes();
+		await user.click(rendered.getByRole('button'));
 
-		const { rendered } = renderRouter(routes);
-
-		expect(rendered.getByRole('heading').textContent).toBe('123');
+		expect(mock).toHaveBeenCalledOnce();
 	});
 });
+
+describe('useSubmit', () => {
+	it('submits the form to an action at the same route', async () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+
+		const mock = vi.fn();
+
+		const action = createAction('/', () => {
+			mock();
+
+			return null;
+		});
+
+		const dataConfig = routeConfig.addActions(action);
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			useSubmit,
+		});
+
+		const Component = createComponent('/', ({ useSubmit }) => () => {
+			const submit = useSubmit();
+
+			return (
+				<button onClick={() => submit(null, { method: 'post' })}>Button</button>
+			);
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
+
+		expect(mock).toHaveBeenCalledOnce();
+	});
+
+	it('submits the form to an action at a different route', async () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({
+			redirect,
+		});
+
+		const mock = vi.fn();
+
+		const action = createAction('/one', ({ redirect }) => {
+			mock();
+
+			return redirect('/');
+		});
+
+		const dataConfig = routeConfig.addActions(action);
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			useSubmit,
+		});
+
+		const Component = createComponent('/', ({ useSubmit }) => () => {
+			const submit = useSubmit();
+
+			return (
+				<button
+					onClick={() => submit(null, { method: 'post', action: '/one' })}
+				>
+					Button
+				</button>
+			);
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
+
+		expect(mock).toHaveBeenCalledOnce();
+	});
+});
+
+//#endregion
+
+//#region Data functions
 
 describe('useLoaderData', () => {
 	it('returns the correct loader data', async () => {
@@ -704,63 +785,7 @@ describe('useRouteLoaderData', () => {
 	});
 });
 
-describe('useParams', () => {
-	it('returns the correct params for a splat route', () => {
-		const dataConfig = routeConfig;
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			useParams,
-		});
-
-		const mock = vi.fn();
-
-		const Component = createComponent('/*', ({ useParams }) => () => {
-			const params = useParams();
-
-			expectTypeOf(params).toEqualTypeOf<{ '*': string }>();
-
-			mock(params);
-
-			return null;
-		});
-
-		const routes = dataConfig.addComponents(Component).toRoutes();
-
-		renderRouter(routes, '/123');
-
-		expect(mock).toHaveBeenCalledWith({ '*': '123' });
-	});
-
-	it('returns the correct params for a dynamic route', () => {
-		const dataConfig = routeConfig;
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			useParams,
-		});
-
-		const mock = vi.fn();
-
-		const Component = createComponent('/two/:param', ({ useParams }) => () => {
-			const params = useParams();
-
-			expectTypeOf(params).toEqualTypeOf<{ param: string }>();
-
-			mock(params);
-
-			return null;
-		});
-
-		const routes = dataConfig.addComponents(Component).toRoutes();
-
-		renderRouter(routes, '/two/123');
-
-		expect(mock).toHaveBeenCalledWith({ param: '123' });
-	});
-});
-
-describe('useActionDaa', () => {
+describe('useActionData', () => {
 	it('returns the correct action data', async () => {
 		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
 
@@ -808,3 +833,5 @@ describe('useActionDaa', () => {
 		expect(rendered.getByRole('heading').textContent).toBe('action data');
 	});
 });
+
+//#endregion
