@@ -124,38 +124,38 @@ describe('config', () => {
 	// 	);
 	// });
 
-	// it('renders an error boundary', async () => {
-	// 	const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
+	it('renders an error boundary', async () => {
+		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
 
-	// 	const loader = createLoader('/', () => {
-	// 		throw Error();
-	// 	});
+		const loader = createLoader('/', () => {
+			throw Error();
+		});
 
-	// 	const dataConfig = routeConfig.addLoaders(loader);
-	// 	type DataConfig = typeof dataConfig;
+		const dataConfig = routeConfig.addLoaders(loader);
+		type DataConfig = typeof dataConfig;
 
-	// 	const { createComponent, createErrorBoundary } =
-	// 		initRenderCreators<DataConfig>().addUtils({});
+		const { createComponent, createErrorBoundary } =
+			initRenderCreators<DataConfig>().addUtils({});
 
-	// 	const Component = createComponent('/', () => () => {
-	// 		return <h1>Component</h1>;
-	// 	});
+		const Component = createComponent('/', () => () => {
+			return <h1>Component</h1>;
+		});
 
-	// 	const ErrorBoundary = createErrorBoundary('/', () => () => {
-	// 		return <h1>Error Boundary</h1>;
-	// 	});
+		const ErrorBoundary = createErrorBoundary('/', () => () => {
+			return <h1>Error Boundary</h1>;
+		});
 
-	// 	const routes = dataConfig
-	// 		.addComponents(Component)
-	// 		.addErrorBoundaries(ErrorBoundary)
-	// 		.toRoutes();
+		const routes = dataConfig
+			.addComponents(Component)
+			.addErrorBoundaries(ErrorBoundary)
+			.toRoutes();
 
-	// 	const { rendered } = renderRouter(routes);
+		const { rendered } = renderRouter(routes);
 
-	// 	expect((await rendered.findByRole('heading')).textContent).toBe(
-	// 		'Error Boundary'
-	// 	);
-	// });
+		expect((await rendered.findByRole('heading')).textContent).toBe(
+			'Error Boundary'
+		);
+	});
 });
 
 // //#region Params
