@@ -25,7 +25,7 @@
 		"@testing-library/react": "^14.0.0",
 		"@testing-library/user-event": "^14.4.3",
 		"@trivago/prettier-plugin-sort-imports": "^4.1.1",
-		"@types/react": "^18.0.31",
+		"@types/react": "^18.0.33",
 		"@types/react-dom": "^18.0.11",
 		"jsdom": "^21.1.1",
 		"prettier": "^2.8.7",
@@ -34,7 +34,7 @@
 		"react-router-dom": "^6.10.0",
 		"typescript": "^5.0.3",
 		"vite": "^4.2.1",
-		"vite-plugin-dts": "^2.1.0",
+		"vite-plugin-dts": "^2.2.0",
 		"vitest": "^0.29.8"
 	}
 }
