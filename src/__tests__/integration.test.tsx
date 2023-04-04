@@ -119,7 +119,7 @@ describe('config', () => {
 	});
 });
 
-// //#region Params
+//#region Params
 
 describe('action/loader params', () => {
 	it('returns the correct params for a splat route', () => {
