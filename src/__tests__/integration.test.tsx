@@ -1,6 +1,7 @@
 import { createRouteConfig, initDataCreators, initRenderCreators } from '..';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { useEffect } from 'react';
 import {
 	Form,
 	Link,
@@ -149,6 +150,74 @@ describe('redirect', () => {
 	});
 });
 
+describe('Form', () => {
+	it('submits the form to an action on the current route', async () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+
+		const mock = vi.fn();
+
+		const action = createAction('/', () => {
+			mock();
+		});
+
+		const dataConfig = routeConfig.addActions(action);
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			Form,
+		});
+
+		const Component = createComponent('/', ({ Form }) => () => {
+			return (
+				<Form method="post">
+					<button type="submit">Submit</button>
+				</Form>
+			);
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
+
+		expect(mock).toHaveBeenCalledOnce();
+	});
+
+	it('submits the form to an action on a different route', async () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+
+		const mock = vi.fn();
+
+		const action = createAction('/one', () => {
+			mock();
+		});
+
+		const dataConfig = routeConfig.addActions(action);
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			Form,
+		});
+
+		const Component = createComponent('/', ({ Form }) => () => {
+			return (
+				<Form method="post" action="/one">
+					<button type="submit">Submit</button>
+				</Form>
+			);
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
+
+		expect(mock).toHaveBeenCalledOnce();
+	});
+});
+
 describe('Link', () => {
 	it('navigates to a static route', async () => {
 		const dataConfig = routeConfig;
@@ -268,7 +337,7 @@ describe('NavLink', () => {
 });
 
 describe('useNavigate', () => {
-	it('navigates to a static route', async () => {
+	it('navigates to a static route', () => {
 		const dataConfig = routeConfig;
 		type DataConfig = typeof dataConfig;
 
@@ -279,7 +348,11 @@ describe('useNavigate', () => {
 		const Start = createComponent('/', ({ useNavigate }) => () => {
 			const navigate = useNavigate();
 
-			return <button onClick={() => navigate('/one')}>Button</button>;
+			useEffect(() => {
+				navigate('/one');
+			}, []);
+
+			return null;
 		});
 
 		const End = createComponent('/one', () => () => {
@@ -288,14 +361,12 @@ describe('useNavigate', () => {
 
 		const routes = dataConfig.addComponents(Start, End).toRoutes();
 
-		const { rendered, user } = renderRouter(routes);
-
-		await user.click(rendered.getByRole('button'));
+		const { rendered } = renderRouter(routes);
 
 		expect(rendered.getByRole('heading').textContent).toBe('End');
 	});
 
-	it('navigates to a dynamic route', async () => {
+	it('navigates to a dynamic route', () => {
 		const dataConfig = routeConfig;
 		type DataConfig = typeof dataConfig;
 
@@ -306,13 +377,12 @@ describe('useNavigate', () => {
 
 		const Start = createComponent('/', ({ useNavigate }) => () => {
 			const navigate = useNavigate();
-			return (
-				<button
-					onClick={() => navigate('/two/:param', { params: { param: '123' } })}
-				>
-					Button
-				</button>
-			);
+
+			useEffect(() => {
+				navigate('/two/:param', { params: { param: '123' } });
+			}, []);
+
+			return null;
 		});
 
 		const End = createComponent('/two/:param', ({ useParams }) => () => {
@@ -323,9 +393,7 @@ describe('useNavigate', () => {
 
 		const routes = dataConfig.addComponents(Start, End).toRoutes();
 
-		const { rendered, user } = renderRouter(routes);
-
-		await user.click(rendered.getByRole('button'));
+		const { rendered } = renderRouter(routes);
 
 		expect(rendered.getByRole('heading').textContent).toBe('123');
 	});
