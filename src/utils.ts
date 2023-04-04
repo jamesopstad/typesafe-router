@@ -26,7 +26,7 @@ interface PathOptions {
 	hash?: string;
 }
 
-function createPath(to: string, options: PathOptions) {
+export function createPath(to: string, options: PathOptions) {
 	return `${generatePath(to, options.params)}${
 		options.searchParams ? `?${createSearchParams(options.searchParams)}` : ''
 	}${options.hash ? `#${options.hash}` : ''}`;
