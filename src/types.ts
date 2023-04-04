@@ -349,6 +349,12 @@ type LinkOptions<TBaseOptions> = Omit<TBaseOptions, 'to' | 'relative'> & {
 	hash?: string;
 };
 
+// Will incorrectly infer that there are no params if there is only a single route
+type ParamsIfPath<
+	TPaths extends string,
+	TPath extends string
+> = TPaths extends TPath ? never : PathParams<TPath>;
+
 type LinkProps<
 	TBaseOptions,
 	TPath extends string,
@@ -376,14 +382,11 @@ export interface Config {
 	loaders: LoaderWrapper;
 }
 
-type RedirectFunction<TPaths extends string = string> = <
-	TPath extends TPaths,
-	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
->(
+type RedirectFunction<TPaths extends string = string> = <TPath extends TPaths>(
 	...args: LinkParams<
 		{ init?: Parameters<InputDataUtils['redirect']>[1] },
 		TPath,
-		TPathParams
+		ParamsIfPath<TPaths, TPath>
 	>
 ) => ReturnType<InputDataUtils['redirect']>;
 
@@ -417,48 +420,34 @@ export type LoaderFunctionArgs<
 
 //#region Render functions
 
-type Link<TPaths extends string> = <
-	TPath extends TPaths,
-	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
->(
-	props: LinkProps<$.LinkProps, TPath, TPathParams> &
+type Link<TPaths extends string> = <TPath extends TPaths>(
+	props: LinkProps<$.LinkProps, TPath, ParamsIfPath<TPaths, TPath>> &
 		React.RefAttributes<HTMLAnchorElement>
 ) => ReturnType<InputRenderUtils['Link']>;
 
-type NavLink<TPaths extends string> = <
-	TPath extends TPaths,
-	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
->(
-	props: LinkProps<$.NavLinkProps, TPath, TPathParams> &
+type NavLink<TPaths extends string> = <TPath extends TPaths>(
+	props: LinkProps<$.NavLinkProps, TPath, ParamsIfPath<TPaths, TPath>> &
 		React.RefAttributes<HTMLAnchorElement>
 ) => ReturnType<InputRenderUtils['NavLink']>;
 
-type Navigate<TPaths extends string> = <
-	TPath extends TPaths,
-	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
->(
-	props: LinkProps<$.NavigateProps, TPath, TPathParams>
+type Navigate<TPaths extends string> = <TPath extends TPaths>(
+	props: LinkProps<$.NavigateProps, TPath, ParamsIfPath<TPaths, TPath>>
 ) => ReturnType<InputRenderUtils['Navigate']>;
 
 interface NavigateFunction<TPaths extends string> {
-	<
-		TPath extends TPaths,
-		TPathParams extends string = TPaths extends TPath
-			? never
-			: PathParams<TPath>
-	>(
-		...args: LinkParams<$.NavigateOptions, TPath, TPathParams>
+	<TPath extends TPaths>(
+		...args: LinkParams<$.NavigateOptions, TPath, ParamsIfPath<TPaths, TPath>>
 	): void;
 	(delta: number): void;
 }
 
 // TODO: add support for narrowing paths by available actions (needs to support index routes)
 type SubmitOptions<
+	TBaseOptions,
 	TMethod extends $.FormMethod,
 	TPath extends string,
-	TActionWrapper extends ActionWrapper,
-	TBaseOptions,
-	TPathParams extends string
+	TPathParams extends string,
+	TActionWrapper extends ActionWrapper
 > = Omit<TBaseOptions, 'method' | 'action' | 'relative'> & {
 	method?: TMethod;
 } & ('get' extends TMethod
@@ -470,26 +459,30 @@ type SubmitOptions<
 
 type Form<TPaths extends string, TActionWrapper extends ActionWrapper> = <
 	TMethod extends $.FormMethod,
-	TPath extends TPaths,
-	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
+	TPath extends TPaths
 >(
 	props: SubmitOptions<
+		$.FormProps,
 		TMethod,
 		TPath,
-		TActionWrapper,
-		$.FormProps,
-		TPathParams
+		ParamsIfPath<TPaths, TPath>,
+		TActionWrapper
 	> &
 		React.RefAttributes<HTMLFormElement>
 ) => ReturnType<InputRenderUtils['Form']>;
 
 type SubmitFunction<TPaths extends string, TAction extends ActionWrapper> = <
 	TMethod extends $.FormMethod,
-	TPath extends TPaths,
-	TPathParams extends string = TPaths extends TPath ? never : PathParams<TPath>
+	TPath extends TPaths
 >(
 	target: Parameters<$.SubmitFunction>[0],
-	options?: SubmitOptions<TMethod, TPath, TAction, $.SubmitOptions, TPathParams>
+	options?: SubmitOptions<
+		$.SubmitOptions,
+		TMethod,
+		TPath,
+		ParamsIfPath<TPaths, TPath>,
+		TAction
+	>
 ) => void;
 
 type ActionData<TActionWrapper extends ActionWrapper> = Awaited<
