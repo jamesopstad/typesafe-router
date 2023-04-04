@@ -1,4 +1,9 @@
-import { createRouteConfig, initDataCreators, initRenderCreators } from '..';
+import {
+	createRouteConfig,
+	initDataCreators,
+	initRenderCreators,
+	lazy,
+} from '..';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
@@ -48,7 +53,7 @@ const routeConfig = createRouteConfig([
 	},
 ] as const);
 
-type RouteConfig = typeof routeConfig;
+export type RouteConfig = typeof routeConfig;
 
 describe('Config', () => {
 	it('renders a component', () => {
@@ -66,6 +71,60 @@ describe('Config', () => {
 		const { rendered } = renderRouter(routes);
 
 		expect(rendered.getByRole('heading').textContent).toBe('Component');
+	});
+
+	it('renders a lazy component', async () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({});
+
+		const Component = createComponent('/', () => () => {
+			return <h1>Component</h1>;
+		});
+
+		const routes = dataConfig
+			.addComponents(lazy('/', () => import('./lazy-component')))
+			.toRoutes();
+
+		const { rendered } = renderRouter(routes);
+
+		expect((await rendered.findByRole('heading')).textContent).toBe(
+			'Component'
+		);
+	});
+
+	it('renders an error boundary', async () => {
+		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
+
+		const loader = createLoader('/', () => {
+			throw Error();
+		});
+
+		const dataConfig = routeConfig.addLoaders(loader);
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent, createErrorBoundary } =
+			initRenderCreators<DataConfig>().addUtils({});
+
+		const Component = createComponent('/', () => () => {
+			return <h1>Component</h1>;
+		});
+
+		const ErrorBoundary = createErrorBoundary('/', () => () => {
+			return <h1>Error Boundary</h1>;
+		});
+
+		const routes = dataConfig
+			.addComponents(Component)
+			.addErrorBoundaries(ErrorBoundary)
+			.toRoutes();
+
+		const { rendered } = renderRouter(routes);
+
+		expect((await rendered.findByRole('heading')).textContent).toBe(
+			'Error Boundary'
+		);
 	});
 });
 
