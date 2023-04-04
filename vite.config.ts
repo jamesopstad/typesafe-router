@@ -16,7 +16,7 @@ export default defineConfig({
 		},
 	},
 	test: {
-		environment: 'jsdom',
+		environment: 'happy-dom',
 		globals: true,
 		typecheck: {
 			include: ['**/*.test-d.ts', '**/*.test.{ts,tsx}'],
