@@ -74,25 +74,20 @@ describe('TEMP', () => {
 
 		const { rendered } = renderRouter(routes);
 
-		// const router = createMemoryRouter([
-		// ]);
-
-		// const rendered = render(<RouterProvider router={router} />);
-
 		expect(rendered.getByRole('heading').textContent).toBe('hello');
 	});
 });
 
 describe('TEMP2', () => {
 	it('should also work', () => {
-		const router = createMemoryRouter([
+		const routes = [
 			{
 				path: '/',
 				Component: () => <h1>world</h1>,
 			},
-		]);
+		];
 
-		const rendered = render(<RouterProvider router={router} />);
+		const { rendered } = renderRouter(routes);
 
 		expect(rendered.getByRole('heading').textContent).toBe('world');
 	});
