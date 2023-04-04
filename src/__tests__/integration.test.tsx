@@ -4,7 +4,7 @@ import {
 	initRenderCreators,
 	lazy,
 } from '..';
-import { render } from '@testing-library/react';
+import { cleanup, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
 	Form,
@@ -54,6 +54,10 @@ const routeConfig = createRouteConfig([
 ] as const);
 
 export type RouteConfig = typeof routeConfig;
+
+afterEach(() => {
+	cleanup();
+});
 
 describe('TEMP', () => {
 	const rendered = render(<h1>Hello world</h1>);
