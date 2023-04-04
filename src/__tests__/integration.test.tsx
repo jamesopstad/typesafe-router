@@ -2,6 +2,7 @@ import { createRouteConfig, initDataCreators, initRenderCreators } from '..';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
+	Form,
 	Link,
 	NavLink,
 	Navigate,
@@ -9,9 +10,12 @@ import {
 	RouterProvider,
 	createMemoryRouter,
 	redirect,
+	useActionData,
 	useLoaderData,
+	useNavigate,
 	useParams,
 	useRouteLoaderData,
+	useSubmit,
 } from 'react-router-dom';
 import type { RouteObject } from 'react-router-dom';
 
@@ -46,7 +50,7 @@ const routeConfig = createRouteConfig([
 
 type RouteConfig = typeof routeConfig;
 
-describe('Basic', () => {
+describe('Config', () => {
 	it('renders a component', () => {
 		const dataConfig = routeConfig;
 		type DataConfig = typeof dataConfig;
@@ -65,7 +69,7 @@ describe('Basic', () => {
 	});
 });
 
-describe('params', () => {
+describe('action/loader params', () => {
 	it('returns the correct params', () => {
 		const { createLoader } = initDataCreators<RouteConfig>().addUtils({});
 
@@ -204,57 +208,6 @@ describe('Link', () => {
 	});
 });
 
-describe('Navigate', () => {
-	it('navigates to a static route', () => {
-		const dataConfig = routeConfig;
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			Navigate,
-		});
-
-		const Start = createComponent('/', ({ Navigate }) => () => {
-			return <Navigate to="/one" />;
-		});
-
-		const End = createComponent('/one', () => () => {
-			return <h1>End</h1>;
-		});
-
-		const routes = dataConfig.addComponents(Start, End).toRoutes();
-
-		const { rendered } = renderRouter(routes);
-
-		expect(rendered.getByRole('heading').textContent).toBe('End');
-	});
-
-	it('navigates to a dynamic route', () => {
-		const dataConfig = routeConfig;
-		type DataConfig = typeof dataConfig;
-
-		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
-			Navigate,
-			useParams,
-		});
-
-		const Start = createComponent('/', ({ Navigate }) => () => {
-			return <Navigate to="/two/:param" params={{ param: '123' }} />;
-		});
-
-		const End = createComponent('/two/:param', ({ useParams }) => () => {
-			const params = useParams();
-
-			return <h1>{params.param}</h1>;
-		});
-
-		const routes = dataConfig.addComponents(Start, End).toRoutes();
-
-		const { rendered } = renderRouter(routes);
-
-		expect(rendered.getByRole('heading').textContent).toBe('123');
-	});
-});
-
 describe('NavLink', () => {
 	it('navigates to a static route', async () => {
 		const dataConfig = routeConfig;
@@ -309,6 +262,121 @@ describe('NavLink', () => {
 		const { rendered, user } = renderRouter(routes);
 
 		await user.click(rendered.getByRole('link'));
+
+		expect(rendered.getByRole('heading').textContent).toBe('123');
+	});
+});
+
+describe('useNavigate', () => {
+	it('navigates to a static route', async () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			useNavigate,
+		});
+
+		const Start = createComponent('/', ({ useNavigate }) => () => {
+			const navigate = useNavigate();
+
+			return <button onClick={() => navigate('/one')}>Button</button>;
+		});
+
+		const End = createComponent('/one', () => () => {
+			return <h1>End</h1>;
+		});
+
+		const routes = dataConfig.addComponents(Start, End).toRoutes();
+
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
+
+		expect(rendered.getByRole('heading').textContent).toBe('End');
+	});
+
+	it('navigates to a dynamic route', async () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			useNavigate,
+			useParams,
+		});
+
+		const Start = createComponent('/', ({ useNavigate }) => () => {
+			const navigate = useNavigate();
+			return (
+				<button
+					onClick={() => navigate('/two/:param', { params: { param: '123' } })}
+				>
+					Button
+				</button>
+			);
+		});
+
+		const End = createComponent('/two/:param', ({ useParams }) => () => {
+			const params = useParams();
+
+			return <h1>{params.param}</h1>;
+		});
+
+		const routes = dataConfig.addComponents(Start, End).toRoutes();
+
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
+
+		expect(rendered.getByRole('heading').textContent).toBe('123');
+	});
+});
+
+describe('Navigate', () => {
+	it('navigates to a static route', () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			Navigate,
+		});
+
+		const Start = createComponent('/', ({ Navigate }) => () => {
+			return <Navigate to="/one" />;
+		});
+
+		const End = createComponent('/one', () => () => {
+			return <h1>End</h1>;
+		});
+
+		const routes = dataConfig.addComponents(Start, End).toRoutes();
+
+		const { rendered } = renderRouter(routes);
+
+		expect(rendered.getByRole('heading').textContent).toBe('End');
+	});
+
+	it('navigates to a dynamic route', () => {
+		const dataConfig = routeConfig;
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			Navigate,
+			useParams,
+		});
+
+		const Start = createComponent('/', ({ Navigate }) => () => {
+			return <Navigate to="/two/:param" params={{ param: '123' }} />;
+		});
+
+		const End = createComponent('/two/:param', ({ useParams }) => () => {
+			const params = useParams();
+
+			return <h1>{params.param}</h1>;
+		});
+
+		const routes = dataConfig.addComponents(Start, End).toRoutes();
+
+		const { rendered } = renderRouter(routes);
 
 		expect(rendered.getByRole('heading').textContent).toBe('123');
 	});
@@ -425,7 +493,7 @@ describe('useRouteLoaderData', () => {
 });
 
 describe('useParams', () => {
-	it('returns the correct params for splat routes', () => {
+	it('returns the correct params for a splat route', () => {
 		const dataConfig = routeConfig;
 		type DataConfig = typeof dataConfig;
 
@@ -452,7 +520,7 @@ describe('useParams', () => {
 		expect(mock).toHaveBeenCalledWith({ '*': '123' });
 	});
 
-	it('returns the correct params for dynamic routes', () => {
+	it('returns the correct params for a dynamic route', () => {
 		const dataConfig = routeConfig;
 		type DataConfig = typeof dataConfig;
 
