@@ -158,6 +158,8 @@ describe('Form', () => {
 
 		const action = createAction('/', () => {
 			mock();
+
+			return null;
 		});
 
 		const dataConfig = routeConfig.addActions(action);
@@ -191,6 +193,8 @@ describe('Form', () => {
 
 		const action = createAction('/one', () => {
 			mock();
+
+			return null;
 		});
 
 		const dataConfig = routeConfig.addActions(action);
@@ -213,6 +217,78 @@ describe('Form', () => {
 		const { rendered, user } = renderRouter(routes);
 
 		await user.click(rendered.getByRole('button'));
+
+		expect(mock).toHaveBeenCalledOnce();
+	});
+});
+
+describe('useSubmit', () => {
+	it('submits the form to an action on the current route', () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+
+		const mock = vi.fn();
+
+		const action = createAction('/', () => {
+			mock();
+
+			return null;
+		});
+
+		const dataConfig = routeConfig.addActions(action);
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			useSubmit,
+		});
+
+		const Component = createComponent('/', ({ useSubmit }) => () => {
+			const submit = useSubmit();
+
+			useEffect(() => {
+				submit(null, { method: 'post' });
+			}, []);
+
+			return null;
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		renderRouter(routes);
+
+		expect(mock).toHaveBeenCalledOnce();
+	});
+
+	it('submits the form to an action on a different route', () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+
+		const mock = vi.fn();
+
+		const action = createAction('/one', () => {
+			mock();
+
+			return null;
+		});
+
+		const dataConfig = routeConfig.addActions(action);
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			useSubmit,
+		});
+
+		const Component = createComponent('/', ({ useSubmit }) => () => {
+			const submit = useSubmit();
+
+			useEffect(() => {
+				submit(null, { method: 'post', action: '/one' });
+			}, []);
+
+			return null;
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		renderRouter(routes);
 
 		expect(mock).toHaveBeenCalledOnce();
 	});
