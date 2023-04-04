@@ -1,7 +1,6 @@
 import { createRouteConfig, initDataCreators, initRenderCreators } from '..';
 import { render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useEffect } from 'react';
 import {
 	Form,
 	Link,
@@ -151,7 +150,7 @@ describe('redirect', () => {
 });
 
 describe('Form', () => {
-	it('submits the form to an action on the current route', async () => {
+	it('submits the form to an action on the same route', async () => {
 		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
 
 		const mock = vi.fn();
@@ -187,14 +186,16 @@ describe('Form', () => {
 	});
 
 	it('submits the form to an action on a different route', async () => {
-		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({
+			redirect,
+		});
 
 		const mock = vi.fn();
 
-		const action = createAction('/one', () => {
+		const action = createAction('/one', ({ redirect }) => {
 			mock();
 
-			return null;
+			return redirect('/');
 		});
 
 		const dataConfig = routeConfig.addActions(action);
@@ -223,7 +224,7 @@ describe('Form', () => {
 });
 
 describe('useSubmit', () => {
-	it('submits the form to an action on the current route', () => {
+	it('submits the form to an action on the same route', async () => {
 		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
 
 		const mock = vi.fn();
@@ -244,29 +245,31 @@ describe('useSubmit', () => {
 		const Component = createComponent('/', ({ useSubmit }) => () => {
 			const submit = useSubmit();
 
-			useEffect(() => {
-				submit(null, { method: 'post' });
-			}, []);
-
-			return null;
+			return (
+				<button onClick={() => submit(null, { method: 'post' })}>Button</button>
+			);
 		});
 
 		const routes = dataConfig.addComponents(Component).toRoutes();
 
-		renderRouter(routes);
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
 
 		expect(mock).toHaveBeenCalledOnce();
 	});
 
-	it('submits the form to an action on a different route', () => {
-		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+	it('submits the form to an action on a different route', async () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({
+			redirect,
+		});
 
 		const mock = vi.fn();
 
-		const action = createAction('/one', () => {
+		const action = createAction('/one', ({ redirect }) => {
 			mock();
 
-			return null;
+			return redirect('/');
 		});
 
 		const dataConfig = routeConfig.addActions(action);
@@ -279,16 +282,20 @@ describe('useSubmit', () => {
 		const Component = createComponent('/', ({ useSubmit }) => () => {
 			const submit = useSubmit();
 
-			useEffect(() => {
-				submit(null, { method: 'post', action: '/one' });
-			}, []);
-
-			return null;
+			return (
+				<button
+					onClick={() => submit(null, { method: 'post', action: '/one' })}
+				>
+					Button
+				</button>
+			);
 		});
 
 		const routes = dataConfig.addComponents(Component).toRoutes();
 
-		renderRouter(routes);
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
 
 		expect(mock).toHaveBeenCalledOnce();
 	});
@@ -413,7 +420,7 @@ describe('NavLink', () => {
 });
 
 describe('useNavigate', () => {
-	it('navigates to a static route', () => {
+	it('navigates to a static route', async () => {
 		const dataConfig = routeConfig;
 		type DataConfig = typeof dataConfig;
 
@@ -424,11 +431,7 @@ describe('useNavigate', () => {
 		const Start = createComponent('/', ({ useNavigate }) => () => {
 			const navigate = useNavigate();
 
-			useEffect(() => {
-				navigate('/one');
-			}, []);
-
-			return null;
+			return <button onClick={() => navigate('/one')}>Button</button>;
 		});
 
 		const End = createComponent('/one', () => () => {
@@ -437,12 +440,14 @@ describe('useNavigate', () => {
 
 		const routes = dataConfig.addComponents(Start, End).toRoutes();
 
-		const { rendered } = renderRouter(routes);
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
 
 		expect(rendered.getByRole('heading').textContent).toBe('End');
 	});
 
-	it('navigates to a dynamic route', () => {
+	it('navigates to a dynamic route', async () => {
 		const dataConfig = routeConfig;
 		type DataConfig = typeof dataConfig;
 
@@ -454,11 +459,13 @@ describe('useNavigate', () => {
 		const Start = createComponent('/', ({ useNavigate }) => () => {
 			const navigate = useNavigate();
 
-			useEffect(() => {
-				navigate('/two/:param', { params: { param: '123' } });
-			}, []);
-
-			return null;
+			return (
+				<button
+					onClick={() => navigate('/two/:param', { params: { param: '123' } })}
+				>
+					Button
+				</button>
+			);
 		});
 
 		const End = createComponent('/two/:param', ({ useParams }) => () => {
@@ -469,7 +476,9 @@ describe('useNavigate', () => {
 
 		const routes = dataConfig.addComponents(Start, End).toRoutes();
 
-		const { rendered } = renderRouter(routes);
+		const { rendered, user } = renderRouter(routes);
+
+		await user.click(rendered.getByRole('button'));
 
 		expect(rendered.getByRole('heading').textContent).toBe('123');
 	});
@@ -689,5 +698,54 @@ describe('useParams', () => {
 		renderRouter(routes, '/two/123');
 
 		expect(mock).toHaveBeenCalledWith({ param: '123' });
+	});
+});
+
+describe('useActionDaa', () => {
+	it('returns the correct action data', async () => {
+		const { createAction } = initDataCreators<RouteConfig>().addUtils({});
+
+		const action = createAction('/', async ({ request }) => {
+			const formData = await request.formData();
+			const q = formData.get('q');
+
+			if (typeof q !== 'string') return '';
+
+			return q;
+		});
+
+		const dataConfig = routeConfig.addActions(action);
+		type DataConfig = typeof dataConfig;
+
+		const { createComponent } = initRenderCreators<DataConfig>().addUtils({
+			Form,
+			useActionData,
+		});
+
+		const Component = createComponent('/', ({ Form, useActionData }) => () => {
+			const actionData = useActionData();
+
+			expectTypeOf(actionData).toEqualTypeOf<string | undefined>();
+
+			return (
+				<>
+					<h1>{actionData}</h1>
+					<Form method="post">
+						<input type="hidden" name="q" value="action data" />
+						<button type="submit">Submit</button>
+					</Form>
+				</>
+			);
+		});
+
+		const routes = dataConfig.addComponents(Component).toRoutes();
+
+		const { rendered, user } = renderRouter(routes);
+
+		expect(rendered.getByRole('heading').textContent).toBe('');
+
+		await user.click(rendered.getByRole('button'));
+
+		expect(rendered.getByRole('heading').textContent).toBe('action data');
 	});
 });
