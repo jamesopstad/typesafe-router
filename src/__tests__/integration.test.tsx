@@ -56,7 +56,7 @@ const routeConfig = createRouteConfig([
 export type RouteConfig = typeof routeConfig;
 
 function renderRouter(routes: RouteObject[]) {
-	const router = createMemoryRouter(routes);
+	const router = createMemoryRouter(routes, { initialEntries: ['/'] });
 
 	return {
 		rendered: render(<RouterProvider router={router} />),
