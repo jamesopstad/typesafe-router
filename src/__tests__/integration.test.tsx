@@ -60,6 +60,7 @@ function renderRouter(routes: RouteObject[]) {
 
 	return {
 		rendered: render(<RouterProvider router={router} />),
+		user: userEvent.setup(),
 	};
 }
 
