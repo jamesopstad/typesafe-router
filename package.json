@@ -20,7 +20,7 @@
 		"build": "vite build",
 		"test": "vitest",
 		"typecheck": "vitest typecheck",
-		"publish": "pnpm typecheck && pnpm test && pnpm build && changeset publish"
+		"release": "pnpm typecheck && pnpm test && pnpm build && changeset publish"
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.26.1",
