@@ -1,5 +1,11 @@
 # typesafe-router
 
+## 0.1.0
+
+### Minor Changes
+
+- 47f951f: Initial release
+
 ## 0.0.10
 
 ### Patch Changes
