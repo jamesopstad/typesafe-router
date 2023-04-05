@@ -17,6 +17,12 @@ A tiny wrapper library for [React Router](https://reactrouter.com/) that dramati
 - Pre 1.0 (expect additional features and API changes)
 - React Fast Refresh is currently not supported
 
+## Quickstart
+
+Jump right in with a quickstart example:
+
+[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/fork/github/jamesopstad/typesafe-router/tree/main/examples/quickstart?file=src/routes.tsx)
+
 ## Installation
 
 Requires _react-router-dom ^6.9.0_

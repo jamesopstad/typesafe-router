@@ -29,6 +29,11 @@ export const Root = createComponent('/', ({ Link, useLoaderData }) => () => {
 	);
 });
 
-export const RootErrorBoundary = createErrorBoundary('/', () => () => {
-	return <h1>Error boundary</h1>;
+export const RootErrorBoundary = createErrorBoundary('/', ({ Link }) => () => {
+	return (
+		<>
+			<h1>Error boundary</h1>
+			<Link to="/">Home</Link>
+		</>
+	);
 });
