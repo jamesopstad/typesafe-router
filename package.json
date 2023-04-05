@@ -1,12 +1,18 @@
 {
 	"name": "typesafe-router",
 	"version": "0.0.10",
-	"description": "",
-	"keywords": [],
+	"description": "A tiny wrapper library for React Router that dramatically improves type safety.",
+	"keywords": [
+		"react",
+		"router",
+		"typesafe",
+		"type",
+		"safety"
+	],
 	"author": "James Opstad",
 	"repository": {
 		"type": "git",
-		"url": ""
+		"url": "https://github.com/jamesopstad/typesafe-router"
 	},
 	"license": "MIT",
 	"type": "module",
@@ -38,5 +44,10 @@
 		"vite": "^4.2.1",
 		"vite-plugin-dts": "^2.2.0",
 		"vitest": "^0.29.8"
+	},
+	"peerDependencies": {
+		"react": ">=16.8",
+		"react-dom": ">=16.8",
+		"react-router-dom": ">=6.9"
 	}
 }
