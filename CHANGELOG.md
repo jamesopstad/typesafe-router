@@ -1,5 +1,11 @@
 # typesafe-router
 
+## 0.0.10
+
+### Patch Changes
+
+- 8eaa133: Updated publish script
+
 ## 0.0.9
 
 ### Patch Changes
