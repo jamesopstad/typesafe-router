@@ -1,30 +1,40 @@
 {
 	"name": "typesafe-router",
-	"private": true,
-	"version": "0.0.0",
+	"version": "0.0.8",
+	"description": "",
+	"keywords": [],
+	"author": "James Opstad",
+	"repository": {
+		"type": "git",
+		"url": ""
+	},
+	"license": "MIT",
 	"type": "module",
-	"types": "dist/types/index.d.ts",
-	"module": "dist/index.ts",
+	"files": [
+		"dist"
+	],
+	"types": "./dist/types/index.d.ts",
+	"module": "./dist/typesafe-router.js",
 	"sideEffects": false,
 	"scripts": {
-		"dev": "vite",
 		"build": "vite build",
-		"preview": "vite preview",
 		"test": "vitest",
 		"typecheck": "vitest typecheck"
 	},
 	"devDependencies": {
+		"@testing-library/react": "^14.0.0",
+		"@testing-library/user-event": "^14.4.3",
 		"@trivago/prettier-plugin-sort-imports": "^4.1.1",
-		"@types/react": "^18.0.28",
+		"@types/react": "^18.0.33",
 		"@types/react-dom": "^18.0.11",
-		"@vitejs/plugin-react-swc": "^3.2.0",
-		"prettier": "^2.8.4",
+		"jsdom": "^21.1.1",
+		"prettier": "^2.8.7",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"react-router-dom": "^6.9.0",
-		"typescript": "^4.9.5",
-		"vite": "^4.2.0",
-		"vite-plugin-dts": "^2.1.0",
-		"vitest": "^0.29.3"
+		"react-router-dom": "^6.10.0",
+		"typescript": "^5.0.3",
+		"vite": "^4.2.1",
+		"vite-plugin-dts": "^2.2.0",
+		"vitest": "^0.29.8"
 	}
 }

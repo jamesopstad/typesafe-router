@@ -1,5 +1,7 @@
+import type { RouteProps } from './main';
 import * as symbols from './symbols';
-import type * as $ from 'react-router-dom';
+
+type FunctionType = (args: unknown[]) => unknown;
 
 export type ComponentType = React.ComponentType | null;
 
@@ -16,13 +18,13 @@ export interface Wrapper<
 export type ActionWrapper<TId extends string = string> = Wrapper<
 	TId,
 	typeof symbols.action,
-	(args: $.ActionFunctionArgs) => unknown
+	FunctionType
 >;
 
 export type LoaderWrapper<TId extends string = string> = Wrapper<
 	TId,
 	typeof symbols.loader,
-	(args: $.LoaderFunction) => unknown
+	FunctionType
 >;
 
 export type ComponentWrapper<TId extends string = string> = Wrapper<
@@ -47,8 +49,6 @@ export type LazyWrapper<TId extends string, TValue extends LazyValue> = Wrapper<
 	typeof symbols.lazy,
 	TValue
 >;
-
-export type RouteProps = 'action' | 'loader' | 'Component' | 'ErrorBoundary';
 
 export type EagerOrLazy<
 	TProp extends RouteProps = RouteProps,

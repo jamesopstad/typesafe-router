@@ -61,10 +61,10 @@ type SetId<
 	TRoute extends RouteInput,
 	TParentRoute extends RouteInput
 > = TRoute &
-	(TRoute extends { readonly id: string }
+	(TRoute extends { id: string }
 		? {}
 		: {
-				readonly id: `${TParentRoute extends {
+				id: `${TParentRoute extends {
 					id: infer TParentId extends string;
 				}
 					? TParentId extends '/'
@@ -148,13 +148,13 @@ type _FlattenRoutes<TRoute extends Route, TParentId extends string> =
 	| (Omit<TRoute, 'path' | 'children'> &
 			(TRoute extends { path: infer TPath extends string }
 				? {
-						readonly path: ConvertOptionalPathSegments<TPath>;
-						readonly params: SetParams<TPath>;
+						path: ConvertOptionalPathSegments<TPath>;
+						params: SetParams<TPath>;
 				  }
-				: { readonly params: {} }) &
-			([TParentId] extends [never] ? {} : { readonly parentId: TParentId }) &
+				: { params: {} }) &
+			([TParentId] extends [never] ? {} : { parentId: TParentId }) &
 			(TRoute extends { children: infer TChildren extends readonly Route[] }
-				? { readonly childIds: TChildren[number]['id'] }
+				? { childIds: TChildren[number]['id'] }
 				: {}))
 	| (TRoute extends { children: infer TChildren extends readonly Route[] }
 			? FlattenRoutes<TChildren, TRoute['id']>
@@ -349,40 +349,49 @@ type LinkOptions<TBaseOptions> = Omit<TBaseOptions, 'to' | 'relative'> & {
 	hash?: string;
 };
 
+// Will incorrectly infer that there are no params if there is only a single route
+type ParamsIfPath<
+	TPaths extends string,
+	TPath extends string
+> = TPaths extends TPath ? never : PathParams<TPath>;
+
 type LinkProps<
-	TPath extends string,
 	TBaseOptions,
-	TPathParams extends string = PathParams<TPath>,
+	TPath extends string,
+	TPathParams extends string,
 	TOptions = LinkOptions<TBaseOptions>
-> = { to: TPath } & TOptions &
+> = { to?: TPath } & TOptions &
 	([TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> });
 
 type LinkParams<
-	TPath extends string,
 	TBaseOptions,
-	TPathParams extends string = PathParams<TPath>,
+	TPath extends string,
+	TPathParams extends string,
 	TOptions = LinkOptions<TBaseOptions>
 > = [TPathParams] extends [never]
-	? [to: TPath, options?: TOptions]
+	? [to?: TPath, options?: TOptions]
 	: [to: TPath, options: TOptions & { params: ParamsObject<TPathParams> }];
 
 //#endregion
 
 //#region Data functions
 
-export interface RouteConfig {
+export interface Config {
 	routes: FlatRoute;
+	actions: ActionWrapper;
+	loaders: LoaderWrapper;
 }
 
 type RedirectFunction<TPaths extends string = string> = <TPath extends TPaths>(
 	...args: LinkParams<
+		{ init?: Parameters<InputDataUtils['redirect']>[1] },
 		TPath,
-		{ init?: Parameters<InputDataUtils['redirect']>[1] }
+		ParamsIfPath<TPaths, TPath>
 	>
 ) => ReturnType<InputDataUtils['redirect']>;
 
 interface DataUtils<
-	TConfig extends RouteConfig = RouteConfig,
+	TConfig extends Config = Config,
 	TRoute extends FlatRoute = FlatRoute,
 	TPaths extends string = Paths<TConfig['routes'], TRoute>
 > {
@@ -390,7 +399,7 @@ interface DataUtils<
 }
 
 export type ActionFunctionArgs<
-	TConfig extends RouteConfig,
+	TConfig extends Config,
 	TId extends string,
 	TInputUtils extends Partial<InputDataUtils>,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
@@ -399,7 +408,7 @@ export type ActionFunctionArgs<
 } & ExtractUtils<DataUtils<TConfig, TRoute>, TInputUtils>;
 
 export type LoaderFunctionArgs<
-	TConfig extends RouteConfig,
+	TConfig extends Config,
 	TId extends string,
 	TInputUtils extends Partial<InputDataUtils>,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
@@ -411,59 +420,69 @@ export type LoaderFunctionArgs<
 
 //#region Render functions
 
-export interface DataConfig extends RouteConfig {
-	actions: ActionWrapper;
-	loaders: LoaderWrapper;
-}
-
 type Link<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, $.LinkProps> & React.RefAttributes<HTMLAnchorElement>
+	props: LinkProps<$.LinkProps, TPath, ParamsIfPath<TPaths, TPath>> &
+		React.RefAttributes<HTMLAnchorElement>
 ) => ReturnType<InputRenderUtils['Link']>;
 
 type NavLink<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, $.NavLinkProps> &
+	props: LinkProps<$.NavLinkProps, TPath, ParamsIfPath<TPaths, TPath>> &
 		React.RefAttributes<HTMLAnchorElement>
 ) => ReturnType<InputRenderUtils['NavLink']>;
 
 type Navigate<TPaths extends string> = <TPath extends TPaths>(
-	props: LinkProps<TPath, $.NavigateProps>
+	props: LinkProps<$.NavigateProps, TPath, ParamsIfPath<TPaths, TPath>>
 ) => ReturnType<InputRenderUtils['Navigate']>;
 
 interface NavigateFunction<TPaths extends string> {
-	<TPath extends TPaths>(...args: LinkParams<TPath, $.NavigateOptions>): void;
+	<TPath extends TPaths>(
+		...args: LinkParams<$.NavigateOptions, TPath, ParamsIfPath<TPaths, TPath>>
+	): void;
 	(delta: number): void;
 }
 
 // TODO: add support for narrowing paths by available actions (needs to support index routes)
 type SubmitOptions<
+	TBaseOptions,
 	TMethod extends $.FormMethod,
 	TPath extends string,
-	TAction extends ActionWrapper,
-	TBaseOptions,
-	TPathParams extends string = PathParams<TPath>
+	TPathParams extends string,
+	TActionWrapper extends ActionWrapper
 > = Omit<TBaseOptions, 'method' | 'action' | 'relative'> & {
 	method?: TMethod;
-} & ([TMethod] extends ['get' | never]
+} & ('get' extends TMethod
 		? { action?: TPath }
-		: [TAction] extends [never]
+		: [TActionWrapper] extends [never]
 		? { action: TPath }
 		: { action?: TPath }) &
 	([TPathParams] extends [never] ? {} : { params: ParamsObject<TPathParams> });
 
-type Form<TPaths extends string, TAction extends ActionWrapper> = <
-	TMethod extends $.FormMethod = never,
-	TPath extends TPaths = never
+type Form<TPaths extends string, TActionWrapper extends ActionWrapper> = <
+	TMethod extends $.FormMethod,
+	TPath extends TPaths
 >(
-	props: SubmitOptions<TMethod, TPath, TAction, $.FormProps> &
+	props: SubmitOptions<
+		$.FormProps,
+		TMethod,
+		TPath,
+		ParamsIfPath<TPaths, TPath>,
+		TActionWrapper
+	> &
 		React.RefAttributes<HTMLFormElement>
 ) => ReturnType<InputRenderUtils['Form']>;
 
 type SubmitFunction<TPaths extends string, TAction extends ActionWrapper> = <
-	TMethod extends $.FormMethod = never,
-	TPath extends TPaths = never
+	TMethod extends $.FormMethod,
+	TPath extends TPaths
 >(
 	target: Parameters<$.SubmitFunction>[0],
-	options?: SubmitOptions<TMethod, TPath, TAction, $.SubmitOptions>
+	options?: SubmitOptions<
+		$.SubmitOptions,
+		TMethod,
+		TPath,
+		ParamsIfPath<TPaths, TPath>,
+		TAction
+	>
 ) => void;
 
 type ActionData<TActionWrapper extends ActionWrapper> = Awaited<
@@ -476,7 +495,7 @@ type LoaderData<TLoaderWrapper extends LoaderWrapper> = Awaited<
 >;
 
 type UseRouteLoaderData<
-	TConfig extends DataConfig,
+	TConfig extends Config,
 	TRoute extends FlatRoute,
 	TRequiredIds extends TConfig['routes']['id'] =
 		| AncestorIds<TConfig['routes'], TRoute>
@@ -494,7 +513,7 @@ type UseRouteLoaderData<
 	| (TId extends TOptionalIds ? undefined : never);
 
 interface RenderUtils<
-	TConfig extends DataConfig,
+	TConfig extends Config,
 	TRoute extends FlatRoute,
 	TPaths extends string = Paths<TConfig['routes'], TRoute>,
 	TAction extends ActionWrapper = ExtractById<TConfig['actions'], TRoute['id']>,
@@ -502,8 +521,8 @@ interface RenderUtils<
 > {
 	Form: Form<TPaths, TAction>;
 	Link: Link<TPaths>;
-	Navigate: Navigate<TPaths>;
 	NavLink: NavLink<TPaths>;
+	Navigate: Navigate<TPaths>;
 	useActionData: () => ActionData<TAction> | undefined;
 	useLoaderData: () => LoaderData<TLoader>;
 	useNavigate: () => NavigateFunction<TPaths>;
@@ -513,7 +532,7 @@ interface RenderUtils<
 }
 
 export type ComponentFunctionArgs<
-	TConfig extends DataConfig,
+	TConfig extends Config,
 	TId extends string,
 	TInputUtils extends Partial<InputRenderUtils>,
 	TRoute extends FlatRoute = ExtractById<TConfig['routes'], TId>
