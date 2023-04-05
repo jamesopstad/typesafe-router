@@ -11,8 +11,19 @@ export const Root = createComponent('/', ({ Link, useLoaderData }) => () => {
 	return (
 		<>
 			<h1>Root component</h1>
-			<p>The loader data is: {loaderData}</p>
-			<Link to="lazy-route">Link to lazy-loaded route component</Link>
+			<p>
+				The loader data is: <strong>{loaderData}</strong>
+			</p>
+			<nav>
+				<ul>
+					<li>
+						<Link to="/">Home</Link>
+					</li>
+					<li>
+						<Link to="lazy-route">Lazy-loaded route component</Link>
+					</li>
+				</ul>
+			</nav>
 			<Outlet />
 		</>
 	);

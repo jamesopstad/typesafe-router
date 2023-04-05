@@ -23,8 +23,12 @@ export const Child = createComponent(
 			return (
 				<>
 					<h2>Child route</h2>
-					<p>The ID param is: {params.id}</p>
-					<p>The action data is: {actionData}</p>
+					<p>
+						The ID param is: <strong>{params.id}</strong>
+					</p>
+					<p>
+						The action data is: <strong>{actionData}</strong>
+					</p>
 					<Form method="post">
 						<input name="q" />
 						<button type="submit">Submit</button>
