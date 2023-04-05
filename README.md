@@ -23,6 +23,8 @@ Jump right in with a quickstart example:
 
 [![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/fork/github/jamesopstad/typesafe-router/tree/main/examples/quickstart?file=src/routes.tsx)
 
+> **NOTE:** StackBlitz doesn't display TypeScript autocomplete
+
 ## Installation
 
 Requires `react-router-dom` version 6.9 or above
