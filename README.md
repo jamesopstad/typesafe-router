@@ -25,7 +25,7 @@ Jump right in with a quickstart example:
 
 ## Installation
 
-Requires _react-router-dom ^6.9.0_
+Requires `react-router-dom` version 6.9 or above
 
 ```sh
 npm install typesafe-router
@@ -221,7 +221,7 @@ export const routes = dataConfig
   .toRoutes();
 ```
 
-> **TIP:** `lazy` can be also be used to import loaders, actions and error boundaries. If you are combining lazy and static imports (e.g. a static loader and a lazy component) make sure they are in different files.
+> **TIP:** `lazy` can also be used to import loaders, actions and error boundaries. If you are combining lazy and static imports (e.g. a static loader and a lazy component) make sure they are in different files.
 
 ## API
 
