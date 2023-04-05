@@ -22,6 +22,7 @@
 		"typecheck": "vitest typecheck"
 	},
 	"devDependencies": {
+		"@changesets/cli": "^2.26.1",
 		"@testing-library/react": "^14.0.0",
 		"@testing-library/user-event": "^14.4.3",
 		"@trivago/prettier-plugin-sort-imports": "^4.1.1",
