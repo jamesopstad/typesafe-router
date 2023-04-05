@@ -2,7 +2,7 @@
 
 ## Intro
 
-A wrapper library for [React Router](https://reactrouter.com/) that dramatically improves type safety.
+A tiny wrapper library for [React Router](https://reactrouter.com/) that dramatically improves type safety.
 
 ### Features
 
@@ -19,11 +19,13 @@ A wrapper library for [React Router](https://reactrouter.com/) that dramatically
 
 ## Installation
 
+Requires _react-router-dom ^6.9.0_
+
 ```sh
 npm install typesafe-router
 ```
 
-## Documentation
+## Tutorial
 
 Typesafe Router splits your route definitions into 3 sections:
 
@@ -33,7 +35,7 @@ Typesafe Router splits your route definitions into 3 sections:
 
 This approach unlocks great benefits, both in terms of type safety and lazy-loading.
 
-> These definitions borrow from Matt Brophy's excellent blogpost on the new React Router lazy-loading features (https://remix.run/blog/lazy-loading-routes)
+> These definitions borrow from Matt Brophy's excellent blog post on the new React Router lazy-loading features (https://remix.run/blog/lazy-loading-routes)
 
 ### Create the route config, using just the path matching fields, and then export the type
 
@@ -60,7 +62,7 @@ export type RouteConfig = typeof routeConfig;
 
 > **NOTE:** Make sure to include `as const` after the array. This requirement will be removed once TypeScript 5 is more widely adopted.
 
-### Initialise the data creator functions and provide any React Router utils you need
+### Initialise the data creator functions and add the React Router utils that will be used in your actions and loaders
 
 ```ts
 // utils.ts
@@ -105,12 +107,12 @@ const dataConfig = routeConfig
 export type DataConfig = typeof dataConfig;
 ```
 
-### Initialise the render creator functions and provide any React Router utils you need
+### Initialise the render creator functions and add the React Router utils that will be used in your components and error boundaries
 
 ```ts
 // utils.ts
 /* existing imports */
-import { initDataCreators } from 'typesafe-router';
+import { initRenderCreators } from 'typesafe-router';
 import {
   Link,
   useActionData,
@@ -157,7 +159,7 @@ export const exampleErrorBoundary = createErrorBoundary('/', () => () => {
 });
 ```
 
-### Create the routes by adding the components and error boundaries to the data config and calling `toRoutes`
+### Create the routes by adding the components and error boundaries to the data config and calling `toRoutes()`
 
 ```ts
 // routes.ts
@@ -188,7 +190,6 @@ const router = createBrowserRouter(routes);
 
 ```ts
 // another-route.tsx
-
 import { createComponent } from './utils';
 
 export const Component = createComponent('/another-route', () => () => {
@@ -214,6 +215,8 @@ export const routes = dataConfig
   .toRoutes();
 ```
 
+> **TIP:** `lazy` can be also be used to import loaders, actions and error boundaries. If you are combining lazy and static imports (e.g. a static loader and a lazy component) make sure they are in different files.
+
 ## API
 
 ### React Router imports
@@ -221,54 +224,54 @@ export const routes = dataConfig
 Typesafe Router currently supports the following React Router utils.
 
 - redirect
+- Form (initial support)
+- Link
+- NavLink
+- Navigate
 - useActionData
 - useLoaderData
 - useNavigate
 - useParams
 - useRouteLoaderData
 - useSubmit (initial support)
-- Form (initial support)
-- Link
-- NavLink
-- Navigate
 - _more coming soon..._
 
 This guide will highlight any differences from their React Router equivalents.
 
-> **NOTE:** Paths are defined as string literals and the possible relative and absolute values are inferred. If the path includes dynamic segments then these are required and defined in a `params` object. A `searchParams` object and/or `hash` string can also be defined. For components (`<Link>` etc.) these objects are provided as props. For hooks (`useNavigate`, `useSubmit` etc.) they are provided as properties of the second argument.
+> **NOTE:** Paths are defined as string literals and the possible relative and absolute values are inferred. If the path includes dynamic segments then these are required and defined in a `params` object. A `searchParams` object and/or `hash` string can also be defined. For components (`<Link>` etc.) these objects are provided as props. For hooks (`useNavigate` etc.) they are provided as properties of the second argument.
 
-### redirect
+#### redirect
 
 The path is inferred (see note above).
 
-### useActionData
+#### Link
+
+The path is inferred (see note above)
+
+#### Navigate
+
+The path is inferred (see note above)
+
+#### NavLink
+
+The path is inferred (see note above)
+
+#### useActionData
 
 The return type is inferred from the action function defined on the route.
 
-### useLoaderData
+#### useLoaderData
 
 The return type is inferred from the loader function defined on the route.
 
-### useNavigate
+#### useNavigate
 
 The path is inferred (see note above).
 
-### useParams
+#### useParams
 
 The params are inferred. The type is the union of all the possible combinations for the current route. Params set higher in the route hierarchy are always available whereas params set lower can be accessed by narrowing the type.
 
-### useRouteLoaderData
+#### useRouteLoaderData
 
 The return type is inferred from the loader function with the given ID. IDs are restricted to routes that have loaders and could be rendered at the same time as the current route. If the loader is lower in the route hierarchy then the return type is a union with undefined.
-
-### Link
-
-The path is inferred (see note above)
-
-### Navigate
-
-The path is inferred (see note above)
-
-### NavLink
-
-The path is inferred (see note above)

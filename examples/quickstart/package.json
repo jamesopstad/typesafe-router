@@ -13,7 +13,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.10.0",
-    "typesafe-router": "^0.0.8"
+    "typesafe-router": "^0.0.10"
   },
   "devDependencies": {
     "@types/react": "^18.0.28",
