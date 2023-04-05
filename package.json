@@ -1,6 +1,6 @@
 {
 	"name": "typesafe-router",
-	"version": "0.0.10",
+	"version": "0.1.0",
 	"description": "A tiny wrapper library for React Router that dramatically improves type safety.",
 	"keywords": [
 		"react",
